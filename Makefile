@@ -40,7 +40,7 @@ prefpane: release
 install: app prefpane
 	mkdir -p "$(INSTALL_DIR)"
 	mkdir -p "$(PREFPANE_INSTALL_DIR)"
-	-@pkill -f "^$(INSTALLED_APP)/Contents/MacOS/MouseLocator$$" 2>/dev/null
+	-@pkill -f "^$(INSTALLED_APP)/Contents/MacOS/MouseLocator( |$$)" 2>/dev/null
 	ditto "$(APP_BUNDLE)" "$(INSTALLED_APP)"
 	codesign --force --sign - "$(INSTALLED_APP)"
 	ditto "$(PREFPANE_BUNDLE)" "$(INSTALLED_PREFPANE)"
@@ -48,7 +48,7 @@ install: app prefpane
 	open -n "$(INSTALLED_APP)" --args --register-login
 
 uninstall:
-	-@pkill -f "^$(INSTALLED_APP)/Contents/MacOS/MouseLocator$$" 2>/dev/null
+	-@pkill -f "^$(INSTALLED_APP)/Contents/MacOS/MouseLocator( |$$)" 2>/dev/null
 	-@open -W -n "$(INSTALLED_APP)" --args --unregister-login 2>/dev/null
 	rm -rf "$(INSTALLED_APP)" "$(INSTALLED_PREFPANE)"
 
