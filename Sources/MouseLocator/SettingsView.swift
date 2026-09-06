@@ -43,7 +43,7 @@ struct SettingsView: View {
       }
 
       Section("Idle Sonar") {
-        Toggle("Pulse around the pointer when it stops", isOn: $sonarEnabled)
+        Toggle("Pulse when the pointer moves after being idle", isOn: $sonarEnabled)
 
         LabeledContent("Inactivity delay") {
           HStack {
