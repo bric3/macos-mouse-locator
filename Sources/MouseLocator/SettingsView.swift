@@ -281,7 +281,6 @@ struct SettingsView: View {
       }
     }
     .formStyle(.grouped)
-    .frame(width: 460, height: 580)
   }
 
   private var tailColor: Binding<Color> {

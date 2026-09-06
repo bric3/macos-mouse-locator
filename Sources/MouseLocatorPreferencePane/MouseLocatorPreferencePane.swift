@@ -8,10 +8,11 @@ final class MouseLocatorPreferencePane: NSPreferencePane {
     let view = MainActor.assumeIsolated {
       let view = NSHostingView(
         rootView: SettingsView(settings: .shared)
+          .frame(width: 660, height: 580)
           .scrollDisabled(true)
           .scrollIndicators(.hidden)
       )
-      view.frame = NSRect(x: 0, y: 0, width: 460, height: 580)
+      view.frame = NSRect(x: 0, y: 0, width: 660, height: 580)
       return view
     }
     mainView = view

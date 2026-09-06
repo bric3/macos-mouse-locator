@@ -24,6 +24,7 @@ struct MouseLocatorApp: App {
 
     Settings {
       SettingsView(settings: settings)
+        .frame(width: 460, height: 580)
     }
   }
 }
