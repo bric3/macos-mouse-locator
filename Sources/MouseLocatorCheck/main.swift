@@ -13,6 +13,15 @@ precondition(EffectTiming.sonarProgress(elapsed: 0) == 0)
 precondition(approximatelyEqual(EffectTiming.sonarProgress(elapsed: 1.5), 0.5))
 precondition(EffectTiming.sonarProgress(elapsed: EffectTiming.sonarDuration) == nil)
 
+let controlValues = TailGeometry.bezierControlValues(
+  previous: 0,
+  start: 6,
+  end: 12,
+  following: 18
+)
+precondition(controlValues.first == 8)
+precondition(controlValues.second == 10)
+
 let home = URL(fileURLWithPath: "/Users/test", isDirectory: true)
 precondition(
   ConfigurationLocation.settingsURL(xdgConfigHome: nil, homeDirectory: home).path

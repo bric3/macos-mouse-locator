@@ -17,6 +17,7 @@ final class LocatorSettings: NSObject, ObservableObject {
   @Published var tailDotsEnabled: Bool { didSet { save() } }
   @Published var tailEnabled: Bool { didSet { save() } }
   @Published var tailRainbow: Bool { didSet { save() } }
+  @Published var tailSmoothing: String { didSet { save() } }
   @Published var tailThickness: Double { didSet { save() } }
   @Published private(set) var storageError: String?
 
@@ -62,6 +63,7 @@ final class LocatorSettings: NSObject, ObservableObject {
     tailDotsEnabled = stored.tailDotsEnabled ?? false
     tailEnabled = stored.tailEnabled
     tailRainbow = stored.tailRainbow ?? false
+    tailSmoothing = stored.tailSmoothing ?? "bezier"
     tailThickness = stored.tailThickness
     super.init()
     isReady = true
@@ -95,6 +97,7 @@ final class LocatorSettings: NSObject, ObservableObject {
           tailDotsEnabled: tailDotsEnabled,
           tailEnabled: tailEnabled,
           tailRainbow: tailRainbow,
+          tailSmoothing: tailSmoothing,
           tailThickness: tailThickness
         )
       ).write(to: configurationURL, options: .atomic)
@@ -128,6 +131,7 @@ final class LocatorSettings: NSObject, ObservableObject {
       tailDotsEnabled = stored.tailDotsEnabled ?? false
       tailEnabled = stored.tailEnabled
       tailRainbow = stored.tailRainbow ?? false
+      tailSmoothing = stored.tailSmoothing ?? "bezier"
       tailThickness = stored.tailThickness
       isReady = true
       storageError = nil
@@ -148,6 +152,7 @@ private struct StoredSettings: Codable {
   var tailDotsEnabled: Bool?
   var tailEnabled = true
   var tailRainbow: Bool?
+  var tailSmoothing: String?
   var tailThickness = 8.0
 
   init() {}
@@ -163,6 +168,7 @@ private struct StoredSettings: Codable {
     tailDotsEnabled: Bool,
     tailEnabled: Bool,
     tailRainbow: Bool,
+    tailSmoothing: String,
     tailThickness: Double
   ) {
     self.sonarDelay = sonarDelay
@@ -175,12 +181,13 @@ private struct StoredSettings: Codable {
     self.tailDotsEnabled = tailDotsEnabled
     self.tailEnabled = tailEnabled
     self.tailRainbow = tailRainbow
+    self.tailSmoothing = tailSmoothing
     self.tailThickness = tailThickness
   }
 
   var needsUpgrade: Bool {
     sonarColor == nil || sonarRainbow == nil || tailColor == nil || tailDotsEnabled == nil
-      || tailRainbow == nil
+      || tailRainbow == nil || tailSmoothing == nil
   }
 
   init(legacy: [String: Any]) {

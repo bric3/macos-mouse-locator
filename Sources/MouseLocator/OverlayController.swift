@@ -139,6 +139,7 @@ private final class OverlayController: NSObject {
         tailDotsEnabled: settings.tailDotsEnabled,
         tailLineWidth: settings.tailThickness,
         tailRainbow: settings.tailRainbow,
+        tailSmoothing: settings.tailSmoothing,
         now: now,
         sonarPosition: sonarPosition,
         sonarProgress: sonarProgress,
@@ -166,6 +167,7 @@ private struct OverlayFrame {
   let tailDotsEnabled: Bool
   let tailLineWidth: CGFloat
   let tailRainbow: Bool
+  let tailSmoothing: String
   let now: TimeInterval
   let sonarPosition: NSPoint?
   let sonarProgress: Double?
@@ -186,6 +188,7 @@ private final class OverlayView: NSView {
     tailDotsEnabled: false,
     tailLineWidth: 8,
     tailRainbow: false,
+    tailSmoothing: "bezier",
     now: 0,
     sonarPosition: nil,
     sonarProgress: nil,
@@ -215,7 +218,29 @@ private final class OverlayView: NSView {
         path.lineJoinStyle = .round
         path.lineWidth = frameState.tailLineWidth
         path.move(to: previous.position - origin)
-        path.line(to: point.position - origin)
+        if frameState.tailSmoothing == "none" {
+          path.line(to: point.position - origin)
+        } else {
+          let before = frameState.points[max(0, index - 2)].position
+          let after = frameState.points[min(frameState.points.count - 1, index + 1)].position
+          let controlX = TailGeometry.bezierControlValues(
+            previous: before.x,
+            start: previous.position.x,
+            end: point.position.x,
+            following: after.x
+          )
+          let controlY = TailGeometry.bezierControlValues(
+            previous: before.y,
+            start: previous.position.y,
+            end: point.position.y,
+            following: after.y
+          )
+          path.curve(
+            to: point.position - origin,
+            controlPoint1: NSPoint(x: controlX.first, y: controlY.first) - origin,
+            controlPoint2: NSPoint(x: controlX.second, y: controlY.second) - origin
+          )
+        }
         let color = frameState.tailRainbow
           ? NSColor(
             calibratedHue: totalDistance > 0 ? distance / totalDistance : 0,
