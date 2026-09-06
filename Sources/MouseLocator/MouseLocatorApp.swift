@@ -4,17 +4,12 @@ import SwiftUI
 @main
 struct MouseLocatorApp: App {
   @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-  @AppStorage(LocatorDefaults.sonarEnabled) private var sonarEnabled = true
-  @AppStorage(LocatorDefaults.tailEnabled) private var tailEnabled = true
-
-  init() {
-    LocatorDefaults.register()
-  }
+  @StateObject private var settings = LocatorSettings.shared
 
   var body: some Scene {
     MenuBarExtra("Mouse Locator", systemImage: "cursorarrow.rays") {
-      Toggle("Mouse Tail", isOn: $tailEnabled)
-      Toggle("Idle Sonar", isOn: $sonarEnabled)
+      Toggle("Mouse Tail", isOn: $settings.tailEnabled)
+      Toggle("Idle Sonar", isOn: $settings.sonarEnabled)
 
       SettingsLink {
         Text("Settings…")
@@ -28,7 +23,7 @@ struct MouseLocatorApp: App {
     }
 
     Settings {
-      SettingsView()
+      SettingsView(settings: settings)
     }
   }
 }

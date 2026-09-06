@@ -96,34 +96,31 @@ private final class OverlayController: NSObject {
   }
 
   private func tick() {
-    let defaults = UserDefaults.standard
+    let settings = LocatorSettings.shared
     let now = ProcessInfo.processInfo.systemUptime
     let position = NSEvent.mouseLocation
-    let sonarEnabled = defaults.bool(forKey: LocatorDefaults.sonarEnabled)
-    let tailEnabled = defaults.bool(forKey: LocatorDefaults.tailEnabled)
 
     if position != lastPosition {
       let idleDuration = now - lastMovementTime
       lastPosition = position
       lastMovementTime = now
-      if sonarEnabled,
-        idleDuration >= defaults.double(forKey: LocatorDefaults.sonarDelay)
+      if settings.sonarEnabled,
+        idleDuration >= settings.sonarDelay
       {
         sonarPosition = position
         sonarStartTime = now
       }
-      if tailEnabled {
+      if settings.tailEnabled {
         points.append(TrailPoint(position: position, time: now))
       }
     }
 
     points.removeAll { now - $0.time >= EffectTiming.trailLifetime }
-    if !tailEnabled {
+    if !settings.tailEnabled {
       points.removeAll()
     }
 
-    let tailLineWidth = defaults.double(forKey: LocatorDefaults.tailThickness)
-    if !sonarEnabled {
+    if !settings.sonarEnabled {
       sonarPosition = nil
       sonarStartTime = nil
     }
@@ -136,12 +133,12 @@ private final class OverlayController: NSObject {
       guard let view = panel.contentView as? OverlayView else { return }
       let frameState = OverlayFrame(
         points: points,
-        tailLineWidth: tailLineWidth,
+        tailLineWidth: settings.tailThickness,
         now: now,
         sonarPosition: sonarPosition,
         sonarProgress: sonarProgress,
-        sonarSize: defaults.double(forKey: LocatorDefaults.sonarSize),
-        sonarLineWidth: defaults.double(forKey: LocatorDefaults.sonarThickness)
+        sonarSize: settings.sonarSize,
+        sonarLineWidth: settings.sonarThickness
       )
       if view.frameState.isVisible || frameState.isVisible {
         view.frameState = frameState
