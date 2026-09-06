@@ -1,6 +1,7 @@
 # Mouse Locator
 
-A native macOS menu bar app that makes the pointer easier to find.
+A native macOS menu bar app that makes the pointer easier to find with a
+configurable fading mouse trail.
 
 ## Requirements
 
@@ -21,4 +22,3 @@ together and configured from Settings.
 ## License
 
 [Mozilla Public License 2.0](LICENSE)
-
