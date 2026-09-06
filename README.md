@@ -18,7 +18,8 @@ open .build/MouseLocator.app
 ```
 
 Mouse Locator is available from the menu bar. Its two effects can be enabled
-together and configured from Settings. Trail and circle thickness are adjusted
+together and configured from either the menu-bar Settings window or the Mouse
+Locator pane in System Settings. Trail and circle thickness are adjusted
 independently and both default to 8 pt.
 
 Preferences are stored in `$XDG_CONFIG_HOME/mouse-locator/settings.json`, or
@@ -31,10 +32,10 @@ preferences are migrated automatically the first time this version starts.
 make install
 ```
 
-This installs Mouse Locator in `~/Applications`, registers it to launch at
-login, and starts it. Running the same command again upgrades and re-registers
-the application. If macOS requires approval, System Settings opens to Login
-Items.
+This installs Mouse Locator in `~/Applications`, installs its System Settings
+pane in `~/Library/PreferencePanes`, registers it to launch at login, and starts
+it. Running the same command again upgrades and re-registers the application.
+If macOS requires approval, System Settings opens to Login Items.
 
 ## Uninstall
 
@@ -42,8 +43,8 @@ Items.
 make uninstall
 ```
 
-This stops the application, unregisters it from Login Items, and removes it.
-Saved settings are kept.
+This stops the application, unregisters it from Login Items, and removes the
+application and System Settings pane. Saved settings are kept.
 
 ## License
 

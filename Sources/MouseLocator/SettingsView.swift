@@ -2,8 +2,9 @@ import MouseLocatorCore
 import SwiftUI
 
 @MainActor
-final class LocatorSettings: ObservableObject {
+final class LocatorSettings: NSObject, ObservableObject {
   static let shared = LocatorSettings()
+  private static let changedNotification = Notification.Name("dev.brice.MouseLocator.settingsChanged")
 
   @Published var sonarDelay: Double { didSet { save() } }
   @Published var sonarEnabled: Bool { didSet { save() } }
@@ -16,8 +17,9 @@ final class LocatorSettings: ObservableObject {
   let configurationURL: URL
 
   private var isReady = false
+  private let notificationSender = String(ProcessInfo.processInfo.processIdentifier)
 
-  private init() {
+  override private init() {
     let fileManager = FileManager.default
     configurationURL = ConfigurationLocation.settingsURL(
       xdgConfigHome: ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"],
@@ -49,8 +51,15 @@ final class LocatorSettings: ObservableObject {
     sonarThickness = stored.sonarThickness
     tailEnabled = stored.tailEnabled
     tailThickness = stored.tailThickness
+    super.init()
     isReady = true
     if shouldSave { save() }
+    DistributedNotificationCenter.default().addObserver(
+      self,
+      selector: #selector(reloadSettings(_:)),
+      name: Self.changedNotification,
+      object: nil
+    )
   }
 
   private func save() {
@@ -73,8 +82,35 @@ final class LocatorSettings: ObservableObject {
         )
       ).write(to: configurationURL, options: .atomic)
       storageError = nil
+      DistributedNotificationCenter.default().postNotificationName(
+        Self.changedNotification,
+        object: notificationSender,
+        userInfo: nil,
+        deliverImmediately: true
+      )
     } catch {
       storageError = "Could not save settings: \(error.localizedDescription)"
+    }
+  }
+
+  @objc private func reloadSettings(_ notification: Notification) {
+    guard notification.object as? String != notificationSender else { return }
+    do {
+      let stored = try JSONDecoder().decode(
+        StoredSettings.self,
+        from: Data(contentsOf: configurationURL)
+      )
+      isReady = false
+      sonarDelay = stored.sonarDelay
+      sonarEnabled = stored.sonarEnabled
+      sonarSize = stored.sonarSize
+      sonarThickness = stored.sonarThickness
+      tailEnabled = stored.tailEnabled
+      tailThickness = stored.tailThickness
+      isReady = true
+      storageError = nil
+    } catch {
+      storageError = "Could not reload settings: \(error.localizedDescription)"
     }
   }
 }
