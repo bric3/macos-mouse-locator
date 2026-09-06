@@ -22,10 +22,11 @@ install: app
 	-@pkill -f "^$(INSTALLED_APP)/Contents/MacOS/MouseLocator$$" 2>/dev/null
 	ditto "$(APP_BUNDLE)" "$(INSTALLED_APP)"
 	codesign --force --sign - "$(INSTALLED_APP)"
-	open "$(INSTALLED_APP)"
+	open -n "$(INSTALLED_APP)" --args --register-login
 
 uninstall:
 	-@pkill -f "^$(INSTALLED_APP)/Contents/MacOS/MouseLocator$$" 2>/dev/null
+	-@open -W -n "$(INSTALLED_APP)" --args --unregister-login 2>/dev/null
 	rm -rf "$(INSTALLED_APP)"
 
 run: app

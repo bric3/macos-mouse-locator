@@ -27,8 +27,10 @@ independently and both default to 8 pt.
 make install
 ```
 
-This installs Mouse Locator in `~/Applications`. Running the same command again
-replaces the installed application and restarts it.
+This installs Mouse Locator in `~/Applications`, registers it to launch at
+login, and starts it. Running the same command again upgrades and re-registers
+the application. If macOS requires approval, System Settings opens to Login
+Items.
 
 ## Uninstall
 
@@ -36,7 +38,8 @@ replaces the installed application and restarts it.
 make uninstall
 ```
 
-This stops and removes the installed application. Saved settings are kept.
+This stops the application, unregisters it from Login Items, and removes it.
+Saved settings are kept.
 
 ## License
 
