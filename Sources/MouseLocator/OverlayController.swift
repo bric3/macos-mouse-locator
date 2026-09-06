@@ -135,7 +135,10 @@ private final class OverlayController: NSObject {
       guard let view = panel.contentView as? OverlayView else { return }
       let frameState = OverlayFrame(
         points: points,
+        tailColor: .locatorColor(settings.tailColor),
+        tailDotsEnabled: settings.tailDotsEnabled,
         tailLineWidth: settings.tailThickness,
+        tailRainbow: settings.tailRainbow,
         now: now,
         sonarPosition: sonarPosition,
         sonarProgress: sonarProgress,
@@ -159,7 +162,10 @@ private struct TrailPoint {
 
 private struct OverlayFrame {
   let points: [TrailPoint]
+  let tailColor: NSColor
+  let tailDotsEnabled: Bool
   let tailLineWidth: CGFloat
+  let tailRainbow: Bool
   let now: TimeInterval
   let sonarPosition: NSPoint?
   let sonarProgress: Double?
@@ -176,7 +182,10 @@ private struct OverlayFrame {
 private final class OverlayView: NSView {
   var frameState = OverlayFrame(
     points: [],
+    tailColor: .controlAccentColor,
+    tailDotsEnabled: false,
     tailLineWidth: 8,
+    tailRainbow: false,
     now: 0,
     sonarPosition: nil,
     sonarProgress: nil,
@@ -192,17 +201,30 @@ private final class OverlayView: NSView {
     guard let origin = window?.frame.origin else { return }
 
     if frameState.points.count > 1 {
+      let totalDistance = zip(frameState.points, frameState.points.dropFirst()).reduce(0) {
+        $0 + $1.0.position.distance(to: $1.1.position)
+      }
+      var distance: CGFloat = 0
       for index in 1..<frameState.points.count {
         let previous = frameState.points[index - 1]
         let point = frameState.points[index]
+        distance += previous.position.distance(to: point.position)
         let opacity = EffectTiming.trailOpacity(age: frameState.now - point.time)
         let path = NSBezierPath()
-        path.lineCapStyle = .round
+        path.lineCapStyle = frameState.tailDotsEnabled ? .round : .butt
         path.lineJoinStyle = .round
         path.lineWidth = frameState.tailLineWidth
         path.move(to: previous.position - origin)
         path.line(to: point.position - origin)
-        NSColor.controlAccentColor.withAlphaComponent(opacity * 0.85).setStroke()
+        let color = frameState.tailRainbow
+          ? NSColor(
+            calibratedHue: totalDistance > 0 ? distance / totalDistance : 0,
+            saturation: 0.9,
+            brightness: 1,
+            alpha: 1
+          )
+          : frameState.tailColor
+        color.withAlphaComponent(opacity * 0.85).setStroke()
         path.stroke()
       }
     }
@@ -238,5 +260,9 @@ private final class OverlayView: NSView {
 private extension NSPoint {
   static func - (lhs: NSPoint, rhs: NSPoint) -> NSPoint {
     NSPoint(x: lhs.x - rhs.x, y: lhs.y - rhs.y)
+  }
+
+  func distance(to other: NSPoint) -> CGFloat {
+    hypot(x - other.x, y - other.y)
   }
 }

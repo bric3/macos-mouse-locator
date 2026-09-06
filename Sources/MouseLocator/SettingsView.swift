@@ -13,7 +13,10 @@ final class LocatorSettings: NSObject, ObservableObject {
   @Published var sonarRainbow: Bool { didSet { save() } }
   @Published var sonarSize: Double { didSet { save() } }
   @Published var sonarThickness: Double { didSet { save() } }
+  @Published var tailColor: String { didSet { save() } }
+  @Published var tailDotsEnabled: Bool { didSet { save() } }
   @Published var tailEnabled: Bool { didSet { save() } }
+  @Published var tailRainbow: Bool { didSet { save() } }
   @Published var tailThickness: Double { didSet { save() } }
   @Published private(set) var storageError: String?
 
@@ -55,7 +58,10 @@ final class LocatorSettings: NSObject, ObservableObject {
     sonarRainbow = stored.sonarRainbow ?? false
     sonarSize = stored.sonarSize
     sonarThickness = stored.sonarThickness
+    tailColor = stored.tailColor ?? "accent"
+    tailDotsEnabled = stored.tailDotsEnabled ?? false
     tailEnabled = stored.tailEnabled
+    tailRainbow = stored.tailRainbow ?? false
     tailThickness = stored.tailThickness
     super.init()
     isReady = true
@@ -85,7 +91,10 @@ final class LocatorSettings: NSObject, ObservableObject {
           sonarRainbow: sonarRainbow,
           sonarSize: sonarSize,
           sonarThickness: sonarThickness,
+          tailColor: tailColor,
+          tailDotsEnabled: tailDotsEnabled,
           tailEnabled: tailEnabled,
+          tailRainbow: tailRainbow,
           tailThickness: tailThickness
         )
       ).write(to: configurationURL, options: .atomic)
@@ -115,7 +124,10 @@ final class LocatorSettings: NSObject, ObservableObject {
       sonarRainbow = stored.sonarRainbow ?? false
       sonarSize = stored.sonarSize
       sonarThickness = stored.sonarThickness
+      tailColor = stored.tailColor ?? "accent"
+      tailDotsEnabled = stored.tailDotsEnabled ?? false
       tailEnabled = stored.tailEnabled
+      tailRainbow = stored.tailRainbow ?? false
       tailThickness = stored.tailThickness
       isReady = true
       storageError = nil
@@ -132,7 +144,10 @@ private struct StoredSettings: Codable {
   var sonarRainbow: Bool?
   var sonarSize = 180.0
   var sonarThickness = 8.0
+  var tailColor: String?
+  var tailDotsEnabled: Bool?
   var tailEnabled = true
+  var tailRainbow: Bool?
   var tailThickness = 8.0
 
   init() {}
@@ -144,7 +159,10 @@ private struct StoredSettings: Codable {
     sonarRainbow: Bool,
     sonarSize: Double,
     sonarThickness: Double,
+    tailColor: String,
+    tailDotsEnabled: Bool,
     tailEnabled: Bool,
+    tailRainbow: Bool,
     tailThickness: Double
   ) {
     self.sonarDelay = sonarDelay
@@ -153,12 +171,16 @@ private struct StoredSettings: Codable {
     self.sonarRainbow = sonarRainbow
     self.sonarSize = sonarSize
     self.sonarThickness = sonarThickness
+    self.tailColor = tailColor
+    self.tailDotsEnabled = tailDotsEnabled
     self.tailEnabled = tailEnabled
+    self.tailRainbow = tailRainbow
     self.tailThickness = tailThickness
   }
 
   var needsUpgrade: Bool {
-    sonarColor == nil || sonarRainbow == nil
+    sonarColor == nil || sonarRainbow == nil || tailColor == nil || tailDotsEnabled == nil
+      || tailRainbow == nil
   }
 
   init(legacy: [String: Any]) {
@@ -178,6 +200,12 @@ struct SettingsView: View {
     Form {
       Section("Mouse Tail") {
         Toggle("Show a fading trail behind the pointer", isOn: $settings.tailEnabled)
+
+        ColorPicker("Trail color", selection: tailColor, supportsOpacity: false)
+          .disabled(!settings.tailEnabled || settings.tailRainbow)
+
+        Toggle("Rainbow colors", isOn: $settings.tailRainbow)
+          .disabled(!settings.tailEnabled)
 
         LabeledContent("Trail thickness") {
           HStack {
@@ -246,7 +274,14 @@ struct SettingsView: View {
       }
     }
     .formStyle(.grouped)
-    .frame(width: 460, height: 530)
+    .frame(width: 460, height: 580)
+  }
+
+  private var tailColor: Binding<Color> {
+    Binding(
+      get: { Color(nsColor: .locatorColor(settings.tailColor)) },
+      set: { settings.tailColor = NSColor($0).locatorHexRGB }
+    )
   }
 
   private var sonarColor: Binding<Color> {

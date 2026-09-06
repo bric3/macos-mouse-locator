@@ -22,10 +22,16 @@ together and configured from either the menu-bar Settings window or the Mouse
 Locator pane in System Settings. Trail and circle thickness are adjusted
 independently and both default to 8 pt. After inactivity, the sonar follows the
 pointer for three seconds and can use either a chosen color or rainbow colors.
+The trail also supports a chosen color or a spatial rainbow.
 
 Preferences are stored in `$XDG_CONFIG_HOME/mouse-locator/settings.json`, or
 `~/.config/mouse-locator/settings.json` when `XDG_CONFIG_HOME` is unset. Existing
 preferences are migrated automatically the first time this version starts.
+
+Settings intended for manual editing only:
+
+- `tailDotsEnabled`: defaults to `false`; set it to `true` to restore rounded
+  sample-point caps.
 
 ## Install
 
