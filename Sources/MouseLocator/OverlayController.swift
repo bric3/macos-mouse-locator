@@ -1,13 +1,45 @@
 import AppKit
 import MouseLocatorCore
+import ServiceManagement
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
   private var overlayController: OverlayController?
 
   func applicationDidFinishLaunching(_ notification: Notification) {
+    if CommandLine.arguments.contains("--unregister-login") {
+      setLaunchAtLogin(false)
+      NSApplication.shared.terminate(nil)
+      return
+    }
+    if CommandLine.arguments.contains("--register-login") {
+      setLaunchAtLogin(true)
+    }
+
     overlayController = OverlayController()
     overlayController?.start()
+  }
+
+  private func setLaunchAtLogin(_ enabled: Bool) {
+    let service = SMAppService.mainApp
+    do {
+      if service.status == .enabled || service.status == .requiresApproval {
+        try service.unregister()
+      }
+      if enabled {
+        try service.register()
+      }
+    } catch {
+      let alert = NSAlert(error: error)
+      alert.messageText = enabled
+        ? "Couldn’t Enable Launch at Login"
+        : "Couldn’t Disable Launch at Login"
+      alert.runModal()
+    }
+
+    if enabled, service.status == .requiresApproval {
+      SMAppService.openSystemSettingsLoginItems()
+    }
   }
 }
 
