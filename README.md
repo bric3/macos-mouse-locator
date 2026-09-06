@@ -32,6 +32,10 @@ Settings intended for manual editing only:
 
 - `tailDotsEnabled`: defaults to `false`; set it to `true` to restore rounded
   sample-point caps.
+- `tailSmoothing`: defaults to `"bezier"`; set it to `"none"` for straight
+  segments.
+
+Restart Mouse Locator after editing the JSON file manually.
 
 ## Install
 

@@ -14,6 +14,20 @@ public enum EffectTiming {
   }
 }
 
+public enum TailGeometry {
+  public static func bezierControlValues(
+    previous: Double,
+    start: Double,
+    end: Double,
+    following: Double
+  ) -> (first: Double, second: Double) {
+    (
+      start + (end - previous) / 6,
+      end - (following - start) / 6
+    )
+  }
+}
+
 public enum ConfigurationLocation {
   public static func settingsURL(xdgConfigHome: String?, homeDirectory: URL) -> URL {
     let configHome = xdgConfigHome.flatMap { path in
