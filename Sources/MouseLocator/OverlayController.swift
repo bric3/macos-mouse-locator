@@ -90,7 +90,7 @@ private final class OverlayController: NSObject {
       points.removeAll()
     }
 
-    let lineWidth = defaults.double(forKey: LocatorDefaults.tailSize)
+    let tailLineWidth = defaults.double(forKey: LocatorDefaults.tailThickness)
     if !sonarEnabled {
       sonarPosition = nil
       sonarStartTime = nil
@@ -104,11 +104,12 @@ private final class OverlayController: NSObject {
       guard let view = panel.contentView as? OverlayView else { return }
       let frameState = OverlayFrame(
         points: points,
-        lineWidth: lineWidth,
+        tailLineWidth: tailLineWidth,
         now: now,
         sonarPosition: sonarPosition,
         sonarProgress: sonarProgress,
-        sonarSize: defaults.double(forKey: LocatorDefaults.sonarSize)
+        sonarSize: defaults.double(forKey: LocatorDefaults.sonarSize),
+        sonarLineWidth: defaults.double(forKey: LocatorDefaults.sonarThickness)
       )
       if view.frameState.isVisible || frameState.isVisible {
         view.frameState = frameState
@@ -125,11 +126,12 @@ private struct TrailPoint {
 
 private struct OverlayFrame {
   let points: [TrailPoint]
-  let lineWidth: CGFloat
+  let tailLineWidth: CGFloat
   let now: TimeInterval
   let sonarPosition: NSPoint?
   let sonarProgress: Double?
   let sonarSize: CGFloat
+  let sonarLineWidth: CGFloat
 
   var isVisible: Bool {
     points.count > 1 || sonarProgress != nil
@@ -139,11 +141,12 @@ private struct OverlayFrame {
 private final class OverlayView: NSView {
   var frameState = OverlayFrame(
     points: [],
-    lineWidth: 8,
+    tailLineWidth: 8,
     now: 0,
     sonarPosition: nil,
     sonarProgress: nil,
-    sonarSize: 180
+    sonarSize: 180,
+    sonarLineWidth: 8
   )
 
   override var isOpaque: Bool { false }
@@ -159,7 +162,7 @@ private final class OverlayView: NSView {
         let path = NSBezierPath()
         path.lineCapStyle = .round
         path.lineJoinStyle = .round
-        path.lineWidth = frameState.lineWidth
+        path.lineWidth = frameState.tailLineWidth
         path.move(to: previous.position - origin)
         path.line(to: point.position - origin)
         NSColor.controlAccentColor.withAlphaComponent(opacity * 0.85).setStroke()
@@ -180,7 +183,7 @@ private final class OverlayView: NSView {
         )
       )
       path.lineCapStyle = .round
-      path.lineWidth = 3
+      path.lineWidth = frameState.sonarLineWidth
       NSColor.controlAccentColor.withAlphaComponent((1 - progress) * 0.9).setStroke()
       path.stroke()
     }

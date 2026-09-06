@@ -18,7 +18,8 @@ open .build/MouseLocator.app
 ```
 
 Mouse Locator is available from the menu bar. Its two effects can be enabled
-together and configured from Settings.
+together and configured from Settings. Trail and circle thickness are adjusted
+independently and both default to 8 pt.
 
 ## Install
 

@@ -4,16 +4,18 @@ enum LocatorDefaults {
   static let sonarDelay = "sonarDelay"
   static let sonarEnabled = "sonarEnabled"
   static let sonarSize = "sonarSize"
+  static let sonarThickness = "sonarThickness"
   static let tailEnabled = "tailEnabled"
-  static let tailSize = "tailSize"
+  static let tailThickness = "tailSize"
 
   static func register() {
     UserDefaults.standard.register(defaults: [
       sonarDelay: 3.0,
       sonarEnabled: true,
       sonarSize: 180.0,
+      sonarThickness: 8.0,
       tailEnabled: true,
-      tailSize: 8.0,
+      tailThickness: 8.0,
     ])
   }
 }
@@ -22,19 +24,20 @@ struct SettingsView: View {
   @AppStorage(LocatorDefaults.sonarDelay) private var sonarDelay = 3.0
   @AppStorage(LocatorDefaults.sonarEnabled) private var sonarEnabled = true
   @AppStorage(LocatorDefaults.sonarSize) private var sonarSize = 180.0
+  @AppStorage(LocatorDefaults.sonarThickness) private var sonarThickness = 8.0
   @AppStorage(LocatorDefaults.tailEnabled) private var tailEnabled = true
-  @AppStorage(LocatorDefaults.tailSize) private var tailSize = 8.0
+  @AppStorage(LocatorDefaults.tailThickness) private var tailThickness = 8.0
 
   var body: some View {
     Form {
       Section("Mouse Tail") {
         Toggle("Show a fading trail behind the pointer", isOn: $tailEnabled)
 
-        LabeledContent("Trail size") {
+        LabeledContent("Trail thickness") {
           HStack {
-            Slider(value: $tailSize, in: 2...20, step: 1)
+            Slider(value: $tailThickness, in: 2...20, step: 1)
               .frame(width: 180)
-            Text("\(Int(tailSize)) pt")
+            Text("\(Int(tailThickness)) pt")
               .monospacedDigit()
               .frame(width: 44, alignment: .trailing)
           }
@@ -56,6 +59,17 @@ struct SettingsView: View {
         }
         .disabled(!sonarEnabled)
 
+        LabeledContent("Circle thickness") {
+          HStack {
+            Slider(value: $sonarThickness, in: 2...20, step: 1)
+              .frame(width: 180)
+            Text("\(Int(sonarThickness)) pt")
+              .monospacedDigit()
+              .frame(width: 44, alignment: .trailing)
+          }
+        }
+        .disabled(!sonarEnabled)
+
         LabeledContent("Maximum size") {
           HStack {
             Slider(value: $sonarSize, in: 80...300, step: 10)
@@ -69,6 +83,6 @@ struct SettingsView: View {
       }
     }
     .formStyle(.grouped)
-    .frame(width: 460, height: 360)
+    .frame(width: 460, height: 410)
   }
 }
