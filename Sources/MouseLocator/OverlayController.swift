@@ -18,6 +18,8 @@ private final class OverlayController: NSObject {
   private var timer: Timer?
   private var lastMovementTime = ProcessInfo.processInfo.systemUptime
   private var lastPosition = NSEvent.mouseLocation
+  private var sonarPosition: NSPoint?
+  private var sonarStartTime: TimeInterval?
 
   func start() {
     rebuildPanels()
@@ -69,8 +71,15 @@ private final class OverlayController: NSObject {
     let tailEnabled = defaults.bool(forKey: LocatorDefaults.tailEnabled)
 
     if position != lastPosition {
+      let idleDuration = now - lastMovementTime
       lastPosition = position
       lastMovementTime = now
+      if sonarEnabled,
+        idleDuration >= defaults.double(forKey: LocatorDefaults.sonarDelay)
+      {
+        sonarPosition = position
+        sonarStartTime = now
+      }
       if tailEnabled {
         points.append(TrailPoint(position: position, time: now))
       }
@@ -82,19 +91,22 @@ private final class OverlayController: NSObject {
     }
 
     let lineWidth = defaults.double(forKey: LocatorDefaults.tailSize)
-    let sonarProgress = sonarEnabled
-      ? EffectTiming.sonarProgress(
-        idleDuration: now - lastMovementTime,
-        threshold: defaults.double(forKey: LocatorDefaults.sonarDelay)
-      )
-      : nil
+    if !sonarEnabled {
+      sonarPosition = nil
+      sonarStartTime = nil
+    }
+    let sonarProgress = sonarStartTime.flatMap { EffectTiming.sonarProgress(elapsed: now - $0) }
+    if sonarStartTime != nil, sonarProgress == nil {
+      sonarPosition = nil
+      sonarStartTime = nil
+    }
     panels.forEach { panel in
       guard let view = panel.contentView as? OverlayView else { return }
       let frameState = OverlayFrame(
         points: points,
         lineWidth: lineWidth,
         now: now,
-        sonarPosition: sonarProgress == nil ? nil : lastPosition,
+        sonarPosition: sonarPosition,
         sonarProgress: sonarProgress,
         sonarSize: defaults.double(forKey: LocatorDefaults.sonarSize)
       )

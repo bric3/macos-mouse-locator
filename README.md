@@ -1,7 +1,8 @@
 # Mouse Locator
 
 A native macOS menu bar app that makes the pointer easier to find with a
-configurable fading mouse trail and a repeating sonar pulse after inactivity.
+configurable fading mouse trail and a sonar pulse when movement resumes after
+inactivity.
 
 ## Requirements
 
