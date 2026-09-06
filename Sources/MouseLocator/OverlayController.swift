@@ -16,6 +16,7 @@ private final class OverlayController: NSObject {
   private var panels: [NSPanel] = []
   private var points: [TrailPoint] = []
   private var timer: Timer?
+  private var lastMovementTime = ProcessInfo.processInfo.systemUptime
   private var lastPosition = NSEvent.mouseLocation
 
   func start() {
@@ -49,7 +50,7 @@ private final class OverlayController: NSObject {
     )
     panel.backgroundColor = .clear
     panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
-    panel.contentView = TrailView(frame: NSRect(origin: .zero, size: screen.frame.size))
+    panel.contentView = OverlayView(frame: NSRect(origin: .zero, size: screen.frame.size))
     panel.hasShadow = false
     panel.hidesOnDeactivate = false
     panel.ignoresMouseEvents = true
@@ -64,10 +65,12 @@ private final class OverlayController: NSObject {
     let defaults = UserDefaults.standard
     let now = ProcessInfo.processInfo.systemUptime
     let position = NSEvent.mouseLocation
+    let sonarEnabled = defaults.bool(forKey: LocatorDefaults.sonarEnabled)
     let tailEnabled = defaults.bool(forKey: LocatorDefaults.tailEnabled)
 
     if position != lastPosition {
       lastPosition = position
+      lastMovementTime = now
       if tailEnabled {
         points.append(TrailPoint(position: position, time: now))
       }
@@ -79,10 +82,26 @@ private final class OverlayController: NSObject {
     }
 
     let lineWidth = defaults.double(forKey: LocatorDefaults.tailSize)
+    let sonarProgress = sonarEnabled
+      ? EffectTiming.sonarProgress(
+        idleDuration: now - lastMovementTime,
+        threshold: defaults.double(forKey: LocatorDefaults.sonarDelay)
+      )
+      : nil
     panels.forEach { panel in
-      guard let view = panel.contentView as? TrailView else { return }
-      view.frameState = TrailFrame(points: points, lineWidth: lineWidth, now: now)
-      view.needsDisplay = true
+      guard let view = panel.contentView as? OverlayView else { return }
+      let frameState = OverlayFrame(
+        points: points,
+        lineWidth: lineWidth,
+        now: now,
+        sonarPosition: sonarProgress == nil ? nil : lastPosition,
+        sonarProgress: sonarProgress,
+        sonarSize: defaults.double(forKey: LocatorDefaults.sonarSize)
+      )
+      if view.frameState.isVisible || frameState.isVisible {
+        view.frameState = frameState
+        view.needsDisplay = true
+      }
     }
   }
 }
@@ -92,31 +111,65 @@ private struct TrailPoint {
   let time: TimeInterval
 }
 
-private struct TrailFrame {
+private struct OverlayFrame {
   let points: [TrailPoint]
   let lineWidth: CGFloat
   let now: TimeInterval
+  let sonarPosition: NSPoint?
+  let sonarProgress: Double?
+  let sonarSize: CGFloat
+
+  var isVisible: Bool {
+    points.count > 1 || sonarProgress != nil
+  }
 }
 
-private final class TrailView: NSView {
-  var frameState = TrailFrame(points: [], lineWidth: 8, now: 0)
+private final class OverlayView: NSView {
+  var frameState = OverlayFrame(
+    points: [],
+    lineWidth: 8,
+    now: 0,
+    sonarPosition: nil,
+    sonarProgress: nil,
+    sonarSize: 180
+  )
 
   override var isOpaque: Bool { false }
 
   override func draw(_ dirtyRect: NSRect) {
-    guard frameState.points.count > 1, let origin = window?.frame.origin else { return }
+    guard let origin = window?.frame.origin else { return }
 
-    for index in 1..<frameState.points.count {
-      let previous = frameState.points[index - 1]
-      let point = frameState.points[index]
-      let opacity = EffectTiming.trailOpacity(age: frameState.now - point.time)
+    if frameState.points.count > 1 {
+      for index in 1..<frameState.points.count {
+        let previous = frameState.points[index - 1]
+        let point = frameState.points[index]
+        let opacity = EffectTiming.trailOpacity(age: frameState.now - point.time)
+        let path = NSBezierPath()
+        path.lineCapStyle = .round
+        path.lineJoinStyle = .round
+        path.lineWidth = frameState.lineWidth
+        path.move(to: previous.position - origin)
+        path.line(to: point.position - origin)
+        NSColor.controlAccentColor.withAlphaComponent(opacity * 0.85).setStroke()
+        path.stroke()
+      }
+    }
+
+    if let position = frameState.sonarPosition, let progress = frameState.sonarProgress {
+      let diameter = 24 + (frameState.sonarSize - 24) * progress
+      let center = position - origin
       let path = NSBezierPath()
+      path.appendOval(
+        in: NSRect(
+          x: center.x - diameter / 2,
+          y: center.y - diameter / 2,
+          width: diameter,
+          height: diameter
+        )
+      )
       path.lineCapStyle = .round
-      path.lineJoinStyle = .round
-      path.lineWidth = frameState.lineWidth
-      path.move(to: previous.position - origin)
-      path.line(to: point.position - origin)
-      NSColor.controlAccentColor.withAlphaComponent(opacity * 0.85).setStroke()
+      path.lineWidth = 3
+      NSColor.controlAccentColor.withAlphaComponent((1 - progress) * 0.9).setStroke()
       path.stroke()
     }
   }
@@ -127,4 +180,3 @@ private extension NSPoint {
     NSPoint(x: lhs.x - rhs.x, y: lhs.y - rhs.y)
   }
 }
-
