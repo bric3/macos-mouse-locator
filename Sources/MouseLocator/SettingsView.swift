@@ -1,3 +1,4 @@
+import AppKit
 import MouseLocatorCore
 import SwiftUI
 
@@ -8,6 +9,8 @@ final class LocatorSettings: NSObject, ObservableObject {
 
   @Published var sonarDelay: Double { didSet { save() } }
   @Published var sonarEnabled: Bool { didSet { save() } }
+  @Published var sonarColor: String { didSet { save() } }
+  @Published var sonarRainbow: Bool { didSet { save() } }
   @Published var sonarSize: Double { didSet { save() } }
   @Published var sonarThickness: Double { didSet { save() } }
   @Published var tailEnabled: Bool { didSet { save() } }
@@ -34,6 +37,7 @@ final class LocatorSettings: NSObject, ObservableObject {
           StoredSettings.self,
           from: Data(contentsOf: configurationURL)
         )
+        shouldSave = stored.needsUpgrade
       } catch {
         stored = StoredSettings()
         storageError = "Could not read settings: \(error.localizedDescription)"
@@ -47,6 +51,8 @@ final class LocatorSettings: NSObject, ObservableObject {
 
     sonarDelay = stored.sonarDelay
     sonarEnabled = stored.sonarEnabled
+    sonarColor = stored.sonarColor ?? "accent"
+    sonarRainbow = stored.sonarRainbow ?? false
     sonarSize = stored.sonarSize
     sonarThickness = stored.sonarThickness
     tailEnabled = stored.tailEnabled
@@ -75,6 +81,8 @@ final class LocatorSettings: NSObject, ObservableObject {
         StoredSettings(
           sonarDelay: sonarDelay,
           sonarEnabled: sonarEnabled,
+          sonarColor: sonarColor,
+          sonarRainbow: sonarRainbow,
           sonarSize: sonarSize,
           sonarThickness: sonarThickness,
           tailEnabled: tailEnabled,
@@ -103,6 +111,8 @@ final class LocatorSettings: NSObject, ObservableObject {
       isReady = false
       sonarDelay = stored.sonarDelay
       sonarEnabled = stored.sonarEnabled
+      sonarColor = stored.sonarColor ?? "accent"
+      sonarRainbow = stored.sonarRainbow ?? false
       sonarSize = stored.sonarSize
       sonarThickness = stored.sonarThickness
       tailEnabled = stored.tailEnabled
@@ -118,6 +128,8 @@ final class LocatorSettings: NSObject, ObservableObject {
 private struct StoredSettings: Codable {
   var sonarDelay = 3.0
   var sonarEnabled = true
+  var sonarColor: String?
+  var sonarRainbow: Bool?
   var sonarSize = 180.0
   var sonarThickness = 8.0
   var tailEnabled = true
@@ -128,6 +140,8 @@ private struct StoredSettings: Codable {
   init(
     sonarDelay: Double,
     sonarEnabled: Bool,
+    sonarColor: String,
+    sonarRainbow: Bool,
     sonarSize: Double,
     sonarThickness: Double,
     tailEnabled: Bool,
@@ -135,10 +149,16 @@ private struct StoredSettings: Codable {
   ) {
     self.sonarDelay = sonarDelay
     self.sonarEnabled = sonarEnabled
+    self.sonarColor = sonarColor
+    self.sonarRainbow = sonarRainbow
     self.sonarSize = sonarSize
     self.sonarThickness = sonarThickness
     self.tailEnabled = tailEnabled
     self.tailThickness = tailThickness
+  }
+
+  var needsUpgrade: Bool {
+    sonarColor == nil || sonarRainbow == nil
   }
 
   init(legacy: [String: Any]) {
@@ -173,6 +193,12 @@ struct SettingsView: View {
 
       Section("Idle Sonar") {
         Toggle("Pulse when the pointer moves after being idle", isOn: $settings.sonarEnabled)
+
+        ColorPicker("Circle color", selection: sonarColor, supportsOpacity: false)
+          .disabled(!settings.sonarEnabled || settings.sonarRainbow)
+
+        Toggle("Rainbow colors", isOn: $settings.sonarRainbow)
+          .disabled(!settings.sonarEnabled)
 
         LabeledContent("Inactivity delay") {
           HStack {
@@ -220,6 +246,41 @@ struct SettingsView: View {
       }
     }
     .formStyle(.grouped)
-    .frame(width: 460, height: 480)
+    .frame(width: 460, height: 530)
+  }
+
+  private var sonarColor: Binding<Color> {
+    Binding(
+      get: { Color(nsColor: .locatorColor(settings.sonarColor)) },
+      set: { settings.sonarColor = NSColor($0).locatorHexRGB }
+    )
+  }
+}
+
+extension NSColor {
+  static func locatorColor(_ value: String) -> NSColor {
+    guard value.count == 7,
+      value.first == "#",
+      let rgb = UInt32(value.dropFirst(), radix: 16)
+    else {
+      return .controlAccentColor
+    }
+
+    return NSColor(
+      srgbRed: CGFloat((rgb >> 16) & 0xff) / 255,
+      green: CGFloat((rgb >> 8) & 0xff) / 255,
+      blue: CGFloat(rgb & 0xff) / 255,
+      alpha: 1
+    )
+  }
+
+  var locatorHexRGB: String {
+    let color = usingColorSpace(.sRGB) ?? self
+    return String(
+      format: "#%02X%02X%02X",
+      Int((color.redComponent * 255).rounded()),
+      Int((color.greenComponent * 255).rounded()),
+      Int((color.blueComponent * 255).rounded())
+    )
   }
 }

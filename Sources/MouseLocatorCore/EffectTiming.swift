@@ -1,7 +1,7 @@
 import Foundation
 
 public enum EffectTiming {
-  public static let sonarDuration: TimeInterval = 1.6
+  public static let sonarDuration: TimeInterval = 3
   public static let trailLifetime: TimeInterval = 0.55
 
   public static func sonarProgress(elapsed: TimeInterval) -> Double? {
