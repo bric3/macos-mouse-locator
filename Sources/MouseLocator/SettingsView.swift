@@ -147,13 +147,13 @@ private struct StoredSettings: Codable {
   var sonarColor: String?
   var sonarRainbow: Bool?
   var sonarSize = 180.0
-  var sonarThickness = 8.0
+  var sonarThickness = 3.0
   var tailColor: String?
   var tailDotsEnabled: Bool?
   var tailEnabled = true
   var tailRainbow: Bool?
   var tailSmoothing: String?
-  var tailThickness = 8.0
+  var tailThickness = 3.0
 
   init() {}
 
