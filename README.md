@@ -21,6 +21,10 @@ Mouse Locator is available from the menu bar. Its two effects can be enabled
 together and configured from Settings. Trail and circle thickness are adjusted
 independently and both default to 8 pt.
 
+Preferences are stored in `$XDG_CONFIG_HOME/mouse-locator/settings.json`, or
+`~/.config/mouse-locator/settings.json` when `XDG_CONFIG_HOME` is unset. Existing
+preferences are migrated automatically the first time this version starts.
+
 ## Install
 
 ```sh

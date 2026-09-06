@@ -1,3 +1,4 @@
+import Foundation
 import MouseLocatorCore
 
 func approximatelyEqual(_ value: Double?, _ expected: Double) -> Bool {
@@ -11,4 +12,18 @@ precondition(EffectTiming.sonarProgress(elapsed: -0.1) == nil)
 precondition(EffectTiming.sonarProgress(elapsed: 0) == 0)
 precondition(approximatelyEqual(EffectTiming.sonarProgress(elapsed: 0.8), 0.5))
 precondition(EffectTiming.sonarProgress(elapsed: EffectTiming.sonarDuration) == nil)
-print("Effect timing checks passed")
+
+let home = URL(fileURLWithPath: "/Users/test", isDirectory: true)
+precondition(
+  ConfigurationLocation.settingsURL(xdgConfigHome: nil, homeDirectory: home).path
+    == "/Users/test/.config/mouse-locator/settings.json"
+)
+precondition(
+  ConfigurationLocation.settingsURL(xdgConfigHome: "/tmp/config", homeDirectory: home).path
+    == "/tmp/config/mouse-locator/settings.json"
+)
+precondition(
+  ConfigurationLocation.settingsURL(xdgConfigHome: "relative", homeDirectory: home).path
+    == "/Users/test/.config/mouse-locator/settings.json"
+)
+print("Mouse Locator checks passed")
