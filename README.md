@@ -30,6 +30,14 @@ make install
 This installs Mouse Locator in `~/Applications`. Running the same command again
 replaces the installed application and restarts it.
 
+## Uninstall
+
+```sh
+make uninstall
+```
+
+This stops and removes the installed application. Saved settings are kept.
+
 ## License
 
 [Mozilla Public License 2.0](LICENSE)

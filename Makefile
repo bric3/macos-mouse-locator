@@ -2,7 +2,7 @@ APP_BUNDLE := .build/MouseLocator.app
 INSTALL_DIR ?= $(HOME)/Applications
 INSTALLED_APP := $(INSTALL_DIR)/MouseLocator.app
 
-.PHONY: build test app install run clean
+.PHONY: build test app install uninstall run clean
 
 build:
 	swift build
@@ -23,6 +23,10 @@ install: app
 	ditto "$(APP_BUNDLE)" "$(INSTALLED_APP)"
 	codesign --force --sign - "$(INSTALLED_APP)"
 	open "$(INSTALLED_APP)"
+
+uninstall:
+	-@pkill -f "^$(INSTALLED_APP)/Contents/MacOS/MouseLocator$$" 2>/dev/null
+	rm -rf "$(INSTALLED_APP)"
 
 run: app
 	open $(APP_BUNDLE)
