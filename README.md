@@ -20,7 +20,7 @@ open .build/MouseLocator.app
 Mouse Locator is available from the menu bar. Its two effects can be enabled
 together and configured from either the menu-bar Settings window or the Mouse
 Locator pane in System Settings. Trail and circle thickness are adjusted
-independently and both default to 8 pt. After inactivity, the sonar follows the
+independently and both default to 3 pt. After inactivity, the sonar follows the
 pointer for three seconds and can use either a chosen color or rainbow colors.
 The trail also supports a chosen color or a spatial rainbow.
 

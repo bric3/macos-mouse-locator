@@ -186,7 +186,7 @@ private final class OverlayView: NSView {
     points: [],
     tailColor: .controlAccentColor,
     tailDotsEnabled: false,
-    tailLineWidth: 8,
+    tailLineWidth: 3,
     tailRainbow: false,
     tailSmoothing: "bezier",
     now: 0,
@@ -195,7 +195,7 @@ private final class OverlayView: NSView {
     sonarColor: .controlAccentColor,
     sonarRainbow: false,
     sonarSize: 180,
-    sonarLineWidth: 8
+    sonarLineWidth: 3
   )
 
   override var isOpaque: Bool { false }
