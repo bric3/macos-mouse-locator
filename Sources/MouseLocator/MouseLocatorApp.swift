@@ -3,8 +3,17 @@ import SwiftUI
 
 @main
 struct MouseLocatorApp: App {
+  @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+  @AppStorage(LocatorDefaults.tailEnabled) private var tailEnabled = true
+
+  init() {
+    LocatorDefaults.register()
+  }
+
   var body: some Scene {
     MenuBarExtra("Mouse Locator", systemImage: "cursorarrow.rays") {
+      Toggle("Mouse Tail", isOn: $tailEnabled)
+
       SettingsLink {
         Text("Settings…")
       }
@@ -21,11 +30,3 @@ struct MouseLocatorApp: App {
     }
   }
 }
-
-private struct SettingsView: View {
-  var body: some View {
-    Text("Mouse Locator")
-      .frame(width: 420, height: 180)
-  }
-}
-

@@ -6,7 +6,7 @@ build:
 	swift build
 
 test:
-	swift test
+	swift run MouseLocatorCheck
 
 app:
 	swift build -c release
@@ -20,4 +20,3 @@ run: app
 
 clean:
 	swift package clean
-
