@@ -123,6 +123,8 @@ private final class OverlayController: NSObject {
     if !settings.sonarEnabled {
       sonarPosition = nil
       sonarStartTime = nil
+    } else if sonarStartTime != nil {
+      sonarPosition = position
     }
     let sonarProgress = sonarStartTime.flatMap { EffectTiming.sonarProgress(elapsed: now - $0) }
     if sonarStartTime != nil, sonarProgress == nil {
@@ -137,6 +139,8 @@ private final class OverlayController: NSObject {
         now: now,
         sonarPosition: sonarPosition,
         sonarProgress: sonarProgress,
+        sonarColor: .locatorColor(settings.sonarColor),
+        sonarRainbow: settings.sonarRainbow,
         sonarSize: settings.sonarSize,
         sonarLineWidth: settings.sonarThickness
       )
@@ -159,6 +163,8 @@ private struct OverlayFrame {
   let now: TimeInterval
   let sonarPosition: NSPoint?
   let sonarProgress: Double?
+  let sonarColor: NSColor
+  let sonarRainbow: Bool
   let sonarSize: CGFloat
   let sonarLineWidth: CGFloat
 
@@ -174,6 +180,8 @@ private final class OverlayView: NSView {
     now: 0,
     sonarPosition: nil,
     sonarProgress: nil,
+    sonarColor: .controlAccentColor,
+    sonarRainbow: false,
     sonarSize: 180,
     sonarLineWidth: 8
   )
@@ -213,7 +221,15 @@ private final class OverlayView: NSView {
       )
       path.lineCapStyle = .round
       path.lineWidth = frameState.sonarLineWidth
-      NSColor.controlAccentColor.withAlphaComponent((1 - progress) * 0.9).setStroke()
+      let color = frameState.sonarRainbow
+        ? NSColor(
+          calibratedHue: CGFloat(progress),
+          saturation: 0.9,
+          brightness: 1,
+          alpha: 1
+        )
+        : frameState.sonarColor
+      color.withAlphaComponent((1 - progress) * 0.9).setStroke()
       path.stroke()
     }
   }
