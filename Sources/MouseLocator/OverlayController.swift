@@ -211,15 +211,18 @@ private final class OverlayView: NSView {
       for index in 1..<frameState.points.count {
         let previous = frameState.points[index - 1]
         let point = frameState.points[index]
+        let startDistance = distance
         distance += previous.position.distance(to: point.position)
         let opacity = EffectTiming.trailOpacity(age: frameState.now - point.time)
+        let start = previous.position - origin
+        let end = point.position - origin
         let path = NSBezierPath()
         path.lineCapStyle = frameState.tailDotsEnabled ? .round : .butt
         path.lineJoinStyle = .round
         path.lineWidth = frameState.tailLineWidth
-        path.move(to: previous.position - origin)
+        path.move(to: start)
         if frameState.tailSmoothing == "none" {
-          path.line(to: point.position - origin)
+          path.line(to: end)
         } else {
           let before = frameState.points[max(0, index - 2)].position
           let after = frameState.points[min(frameState.points.count - 1, index + 1)].position
@@ -236,21 +239,29 @@ private final class OverlayView: NSView {
             following: after.y
           )
           path.curve(
-            to: point.position - origin,
+            to: end,
             controlPoint1: NSPoint(x: controlX.first, y: controlY.first) - origin,
             controlPoint2: NSPoint(x: controlX.second, y: controlY.second) - origin
           )
         }
-        let color = frameState.tailRainbow
-          ? NSColor(
+        if frameState.tailRainbow {
+          let startColor = NSColor(
+            calibratedHue: totalDistance > 0 ? startDistance / totalDistance : 0,
+            saturation: 0.9,
+            brightness: 1,
+            alpha: EffectTiming.trailOpacity(age: frameState.now - previous.time) * 0.85
+          )
+          let endColor = NSColor(
             calibratedHue: totalDistance > 0 ? distance / totalDistance : 0,
             saturation: 0.9,
             brightness: 1,
-            alpha: 1
+            alpha: opacity * 0.85
           )
-          : frameState.tailColor
-        color.withAlphaComponent(opacity * 0.85).setStroke()
-        path.stroke()
+          stroke(path, from: start, to: end, colors: [startColor, endColor])
+        } else {
+          frameState.tailColor.withAlphaComponent(opacity * 0.85).setStroke()
+          path.stroke()
+        }
       }
     }
 
@@ -279,6 +290,42 @@ private final class OverlayView: NSView {
       color.withAlphaComponent((1 - progress) * 0.9).setStroke()
       path.stroke()
     }
+  }
+
+  private func stroke(
+    _ path: NSBezierPath,
+    from start: NSPoint,
+    to end: NSPoint,
+    colors: [NSColor]
+  ) {
+    guard
+      start != end,
+      let context = NSGraphicsContext.current?.cgContext,
+      let gradient = CGGradient(
+        colorsSpace: CGColorSpace(name: CGColorSpace.sRGB),
+        colors: colors.map(\.cgColor) as CFArray,
+        locations: [0, 1]
+      )
+    else {
+      colors.last?.setStroke()
+      path.stroke()
+      return
+    }
+
+    context.saveGState()
+    context.addPath(path.cgPath)
+    context.setLineWidth(path.lineWidth)
+    context.setLineCap(frameState.tailDotsEnabled ? .round : .butt)
+    context.setLineJoin(.round)
+    context.replacePathWithStrokedPath()
+    context.clip()
+    context.drawLinearGradient(
+      gradient,
+      start: start,
+      end: end,
+      options: [.drawsBeforeStartLocation, .drawsAfterEndLocation]
+    )
+    context.restoreGState()
   }
 }
 
