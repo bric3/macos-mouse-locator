@@ -45,6 +45,7 @@ install: app prefpane
 	codesign --force --sign - "$(INSTALLED_APP)"
 	ditto "$(PREFPANE_BUNDLE)" "$(INSTALLED_PREFPANE)"
 	codesign --force --sign - "$(INSTALLED_PREFPANE)"
+	touch "$(PREFPANE_INSTALL_DIR)"
 	open -n "$(INSTALLED_APP)" --args --register-login
 
 uninstall:
