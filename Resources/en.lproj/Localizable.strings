@@ -30,10 +30,10 @@
 "Control" = "Control";
 "Option" = "Option";
 "Command" = "Command";
-"Accessibility access granted" = "Accessibility access granted";
-"Accessibility access is required" = "Accessibility access is required";
-"Checking Accessibility access…" = "Checking Accessibility access…";
-"Open Accessibility Settings" = "Open Accessibility Settings";
+"Input Monitoring access granted" = "Input Monitoring access granted";
+"Input Monitoring access is required" = "Input Monitoring access is required";
+"Checking Input Monitoring access…" = "Checking Input Monitoring access…";
+"Open Input Monitoring Settings" = "Open Input Monitoring Settings";
 "Circle color" = "Circle color";
 "Inactivity delay" = "Inactivity delay";
 "Expansion speed" = "Expansion speed";
