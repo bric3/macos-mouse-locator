@@ -1,3 +1,6 @@
+// Copyright 2026 Brice Dutheil
+// SPDX-License-Identifier: MPL-2.0
+
 import Foundation
 
 public enum EffectTiming {

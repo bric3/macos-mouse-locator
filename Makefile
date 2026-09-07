@@ -1,3 +1,6 @@
+# Copyright 2026 Brice Dutheil
+# SPDX-License-Identifier: MPL-2.0
+
 APP_BUNDLE := .build/MouseLocator.app
 PREFPANE_BUNDLE := .build/MouseLocator.prefPane
 INSTALL_DIR ?= $(HOME)/Applications
@@ -5,8 +8,22 @@ PREFPANE_INSTALL_DIR ?= $(HOME)/Library/PreferencePanes
 INSTALLED_APP := $(INSTALL_DIR)/MouseLocator.app
 INSTALLED_PREFPANE := $(PREFPANE_INSTALL_DIR)/MouseLocator.prefPane
 SWIFT_TARGET := $(shell uname -m)-apple-macosx14.0
+LOPS ?= lops
 
-.PHONY: build test release app prefpane screenshots install uninstall run clean
+.PHONY: build test release app prefpane screenshots install uninstall run clean \
+	check-licenseops license-check license-apply
+
+check-licenseops:
+	@command -v "$(LOPS)" >/dev/null 2>&1 || { \
+		echo "LicenseOps (lops) is required: https://github.com/licenseops/licenseops/releases/tag/v0.2.0" >&2; \
+		exit 127; \
+	}
+
+license-check: check-licenseops
+	$(LOPS) check
+
+license-apply: check-licenseops
+	$(LOPS) fix
 
 build:
 	swift build

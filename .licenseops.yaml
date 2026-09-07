@@ -1,0 +1,13 @@
+license: MPL-2.0
+format: spdx
+copyright-holder: "Brice Dutheil"
+year: 2026
+
+paths:
+  - "."
+
+exclude:
+  - "Package.swift"
+
+gitignore: true
+skip-generated: true
