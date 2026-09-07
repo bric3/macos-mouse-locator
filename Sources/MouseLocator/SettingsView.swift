@@ -29,8 +29,12 @@ final class LocatorSettings: NSObject, ObservableObject {
 
   override private init() {
     let fileManager = FileManager.default
+    let commandLineConfigHome = CommandLine.arguments
+      .first { $0.hasPrefix("--config-home=") }
+      .map { String($0.dropFirst("--config-home=".count)) }
     configurationURL = ConfigurationLocation.settingsURL(
-      xdgConfigHome: ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"],
+      xdgConfigHome: commandLineConfigHome
+        ?? ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"],
       homeDirectory: fileManager.homeDirectoryForCurrentUser
     )
 
