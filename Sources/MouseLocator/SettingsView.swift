@@ -26,13 +26,16 @@ final class LocatorSettings: NSObject, ObservableObject {
   @Published var sonarDelay: Double { didSet { scheduleSave() } }
   @Published var sonarEnabled: Bool { didSet { saveNow() } }
   @Published var sonarColor: String { didSet { scheduleSave() } }
+  @Published var sonarExpansionSpeed: Double { didSet { scheduleSave() } }
   @Published var sonarRainbow: Bool { didSet { saveNow() } }
   @Published var sonarSize: Double { didSet { scheduleSave() } }
   @Published var sonarThickness: Double { didSet { scheduleSave() } }
   @Published var tailColor: String { didSet { scheduleSave() } }
+  @Published var tailActivationMode: String { didSet { saveNow() } }
   @Published var tailDotsEnabled: Bool { didSet { saveNow() } }
   @Published var tailEnabled: Bool { didSet { saveNow() } }
   @Published var tailGap: Double { didSet { scheduleSave() } }
+  @Published var tailInactivityDelay: Double { didSet { scheduleSave() } }
   @Published var tailRainbow: Bool { didSet { saveNow() } }
   @Published var tailSmoothing: String { didSet { saveNow() } }
   @Published var tailThickness: Double { didSet { scheduleSave() } }
@@ -79,13 +82,17 @@ final class LocatorSettings: NSObject, ObservableObject {
     sonarDelay = stored.sonarDelay
     sonarEnabled = stored.sonarEnabled
     sonarColor = stored.sonarColor ?? "accent"
+    sonarExpansionSpeed = stored.sonarExpansionSpeed ?? 1
     sonarRainbow = stored.sonarRainbow ?? false
     sonarSize = stored.sonarSize
     sonarThickness = stored.sonarThickness
     tailColor = stored.tailColor ?? "accent"
+    tailActivationMode = stored.tailActivationMode == "afterInactivity"
+      ? "afterInactivity" : "always"
     tailDotsEnabled = stored.tailDotsEnabled ?? false
     tailEnabled = stored.tailEnabled
     tailGap = stored.tailGap ?? 16
+    tailInactivityDelay = stored.tailInactivityDelay ?? 3
     tailRainbow = stored.tailRainbow ?? false
     tailSmoothing = stored.tailSmoothing ?? "bezier"
     tailThickness = stored.tailThickness
@@ -132,13 +139,16 @@ final class LocatorSettings: NSObject, ObservableObject {
           sonarDelay: sonarDelay,
           sonarEnabled: sonarEnabled,
           sonarColor: sonarColor,
+          sonarExpansionSpeed: sonarExpansionSpeed,
           sonarRainbow: sonarRainbow,
           sonarSize: sonarSize,
           sonarThickness: sonarThickness,
           tailColor: tailColor,
+          tailActivationMode: tailActivationMode,
           tailDotsEnabled: tailDotsEnabled,
           tailEnabled: tailEnabled,
           tailGap: tailGap,
+          tailInactivityDelay: tailInactivityDelay,
           tailRainbow: tailRainbow,
           tailSmoothing: tailSmoothing,
           tailThickness: tailThickness
@@ -170,13 +180,17 @@ final class LocatorSettings: NSObject, ObservableObject {
       sonarDelay = stored.sonarDelay
       sonarEnabled = stored.sonarEnabled
       sonarColor = stored.sonarColor ?? "accent"
+      sonarExpansionSpeed = stored.sonarExpansionSpeed ?? 1
       sonarRainbow = stored.sonarRainbow ?? false
       sonarSize = stored.sonarSize
       sonarThickness = stored.sonarThickness
       tailColor = stored.tailColor ?? "accent"
+      tailActivationMode = stored.tailActivationMode == "afterInactivity"
+        ? "afterInactivity" : "always"
       tailDotsEnabled = stored.tailDotsEnabled ?? false
       tailEnabled = stored.tailEnabled
       tailGap = stored.tailGap ?? 16
+      tailInactivityDelay = stored.tailInactivityDelay ?? 3
       tailRainbow = stored.tailRainbow ?? false
       tailSmoothing = stored.tailSmoothing ?? "bezier"
       tailThickness = stored.tailThickness
@@ -193,13 +207,16 @@ private struct StoredSettings: Codable {
   var sonarDelay = 3.0
   var sonarEnabled = true
   var sonarColor: String?
+  var sonarExpansionSpeed: Double?
   var sonarRainbow: Bool?
   var sonarSize = 180.0
   var sonarThickness = 3.0
   var tailColor: String?
+  var tailActivationMode: String?
   var tailDotsEnabled: Bool?
   var tailEnabled = true
   var tailGap: Double?
+  var tailInactivityDelay: Double?
   var tailRainbow: Bool?
   var tailSmoothing: String?
   var tailThickness = 3.0
@@ -211,13 +228,16 @@ private struct StoredSettings: Codable {
     sonarDelay: Double,
     sonarEnabled: Bool,
     sonarColor: String,
+    sonarExpansionSpeed: Double,
     sonarRainbow: Bool,
     sonarSize: Double,
     sonarThickness: Double,
     tailColor: String,
+    tailActivationMode: String,
     tailDotsEnabled: Bool,
     tailEnabled: Bool,
     tailGap: Double,
+    tailInactivityDelay: Double,
     tailRainbow: Bool,
     tailSmoothing: String,
     tailThickness: Double
@@ -226,22 +246,26 @@ private struct StoredSettings: Codable {
     self.sonarDelay = sonarDelay
     self.sonarEnabled = sonarEnabled
     self.sonarColor = sonarColor
+    self.sonarExpansionSpeed = sonarExpansionSpeed
     self.sonarRainbow = sonarRainbow
     self.sonarSize = sonarSize
     self.sonarThickness = sonarThickness
     self.tailColor = tailColor
+    self.tailActivationMode = tailActivationMode
     self.tailDotsEnabled = tailDotsEnabled
     self.tailEnabled = tailEnabled
     self.tailGap = tailGap
+    self.tailInactivityDelay = tailInactivityDelay
     self.tailRainbow = tailRainbow
     self.tailSmoothing = tailSmoothing
     self.tailThickness = tailThickness
   }
 
   var needsUpgrade: Bool {
-    menuBarIconEnabled == nil || sonarColor == nil || sonarRainbow == nil || tailColor == nil
-      || tailDotsEnabled == nil
-      || tailGap == nil || tailRainbow == nil || tailSmoothing == nil
+    menuBarIconEnabled == nil || sonarColor == nil || sonarExpansionSpeed == nil
+      || sonarRainbow == nil || tailColor == nil || tailActivationMode == nil
+      || tailDotsEnabled == nil || tailGap == nil || tailInactivityDelay == nil
+      || tailRainbow == nil || tailSmoothing == nil
   }
 
   init(legacy: [String: Any]) {
@@ -265,6 +289,23 @@ struct SettingsView: View {
 
       Section(L10n.text("Mouse Tail")) {
         Toggle(L10n.text("Show a fading trail behind the pointer"), isOn: $settings.tailEnabled)
+
+        Picker(L10n.text("Show trail"), selection: $settings.tailActivationMode) {
+          Text(L10n.text("Always")).tag("always")
+          Text(L10n.text("After inactivity")).tag("afterInactivity")
+        }
+        .disabled(!settings.tailEnabled)
+
+        LabeledContent(L10n.text("Inactivity delay")) {
+          HStack {
+            Slider(value: $settings.tailInactivityDelay, in: 1...15, step: 0.5)
+              .frame(width: 180)
+            Text(L10n.format("%.1f s", settings.tailInactivityDelay))
+              .monospacedDigit()
+              .frame(width: 44, alignment: .trailing)
+          }
+        }
+        .disabled(!settings.tailEnabled || settings.tailActivationMode != "afterInactivity")
 
         ColorPicker(L10n.text("Trail color"), selection: tailColor, supportsOpacity: false)
           .disabled(!settings.tailEnabled || settings.tailRainbow)
@@ -312,6 +353,17 @@ struct SettingsView: View {
             Slider(value: $settings.sonarDelay, in: 1...15, step: 0.5)
               .frame(width: 180)
             Text(L10n.format("%.1f s", settings.sonarDelay))
+              .monospacedDigit()
+              .frame(width: 44, alignment: .trailing)
+          }
+        }
+        .disabled(!settings.sonarEnabled)
+
+        LabeledContent(L10n.text("Expansion speed")) {
+          HStack {
+            Slider(value: $settings.sonarExpansionSpeed, in: 0.5...3, step: 0.5)
+              .frame(width: 180)
+            Text(L10n.format("%.1f×", settings.sonarExpansionSpeed))
               .monospacedDigit()
               .frame(width: 44, alignment: .trailing)
           }

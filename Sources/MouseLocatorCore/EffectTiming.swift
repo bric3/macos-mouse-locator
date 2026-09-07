@@ -2,11 +2,24 @@ import Foundation
 
 public enum EffectTiming {
   public static let sonarDuration: TimeInterval = 3
+  public static let tailActivationDuration: TimeInterval = 3
   public static let trailLifetime: TimeInterval = 0.55
 
   public static func sonarProgress(elapsed: TimeInterval) -> Double? {
     guard elapsed >= 0, elapsed < sonarDuration else { return nil }
     return elapsed / sonarDuration
+  }
+
+  public static func sonarExpansionProgress(lifetimeProgress: Double, speed: Double) -> Double {
+    max(0, min(1, lifetimeProgress * speed))
+  }
+
+  public static func tailActivationEnd(
+    now: TimeInterval,
+    idleDuration: TimeInterval,
+    delay: TimeInterval
+  ) -> TimeInterval? {
+    idleDuration >= delay ? now + tailActivationDuration : nil
   }
 
   public static func trailOpacity(age: TimeInterval) -> Double {

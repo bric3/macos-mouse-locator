@@ -12,6 +12,14 @@ precondition(EffectTiming.sonarProgress(elapsed: -0.1) == nil)
 precondition(EffectTiming.sonarProgress(elapsed: 0) == 0)
 precondition(approximatelyEqual(EffectTiming.sonarProgress(elapsed: 1.5), 0.5))
 precondition(EffectTiming.sonarProgress(elapsed: EffectTiming.sonarDuration) == nil)
+precondition(EffectTiming.sonarExpansionProgress(lifetimeProgress: 0.25, speed: 2) == 0.5)
+precondition(EffectTiming.sonarExpansionProgress(lifetimeProgress: 0.5, speed: 3) == 1)
+precondition(
+  EffectTiming.tailActivationEnd(now: 10, idleDuration: 2.9, delay: 3) == nil
+)
+precondition(
+  EffectTiming.tailActivationEnd(now: 10, idleDuration: 3, delay: 3) == 13
+)
 
 let controlValues = TailGeometry.bezierControlValues(
   previous: 0,
