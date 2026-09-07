@@ -37,7 +37,7 @@ public class CaptureShowcases {
       throw new IllegalStateException("Run `make app` before capturing screenshots");
     }
 
-    Path output = root.resolve("github/docs/images");
+    Path output = root.resolve(".github/docs/images");
     Files.createDirectories(output);
     Path configHome = Files.createTempDirectory("mouse-locator-showcase-");
     Path installedApp = Path.of(

@@ -7,10 +7,10 @@ inactivity.
 ## Showcase
 
 <p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="github/docs/images/trail-dark.png"><source media="(prefers-color-scheme: light)" srcset="github/docs/images/trail-light.png"><img alt="A blue mouse trail following the pointer" src="github/docs/images/trail-light.png" width="205"></picture>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="github/docs/images/idle-pulse-dark.png"><source media="(prefers-color-scheme: light)" srcset="github/docs/images/idle-pulse-light.png"><img alt="An expanding circle locating the pointer after inactivity" src="github/docs/images/idle-pulse-light.png" width="205"></picture>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="github/docs/images/both-dark.png"><source media="(prefers-color-scheme: light)" srcset="github/docs/images/both-light.png"><img alt="A mouse trail and idle pulse enabled together" src="github/docs/images/both-light.png" width="205"></picture>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="github/docs/images/rainbow-trail-dark.png"><source media="(prefers-color-scheme: light)" srcset="github/docs/images/rainbow-trail-light.png"><img alt="A rainbow mouse trail following the pointer" src="github/docs/images/rainbow-trail-light.png" width="205"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset=".github/docs/images/trail-dark.png"><source media="(prefers-color-scheme: light)" srcset=".github/docs/images/trail-light.png"><img alt="A blue mouse trail following the pointer" src=".github/docs/images/trail-light.png" width="205"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset=".github/docs/images/idle-pulse-dark.png"><source media="(prefers-color-scheme: light)" srcset=".github/docs/images/idle-pulse-light.png"><img alt="An expanding circle locating the pointer after inactivity" src=".github/docs/images/idle-pulse-light.png" width="205"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset=".github/docs/images/both-dark.png"><source media="(prefers-color-scheme: light)" srcset=".github/docs/images/both-light.png"><img alt="A mouse trail and idle pulse enabled together" src=".github/docs/images/both-light.png" width="205"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset=".github/docs/images/rainbow-trail-dark.png"><source media="(prefers-color-scheme: light)" srcset=".github/docs/images/rainbow-trail-light.png"><img alt="A rainbow mouse trail following the pointer" src=".github/docs/images/rainbow-trail-light.png" width="205"></picture>
 </p>
 
 From left to right:
