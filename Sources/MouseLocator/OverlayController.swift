@@ -81,11 +81,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private func setLaunchAtLogin(_ enabled: Bool) {
     let service = SMAppService.mainApp
     do {
-      if service.status == .enabled || service.status == .requiresApproval {
-        try service.unregister()
-      }
       if enabled {
-        try service.register()
+        if service.status == .notRegistered {
+          try service.register()
+        }
+      } else if service.status == .enabled || service.status == .requiresApproval {
+        try service.unregister()
       }
     } catch {
       let alert = NSAlert(error: error)

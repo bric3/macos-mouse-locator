@@ -50,8 +50,9 @@ Mouse Locator requires macOS 14 or later.
 
 This installs Mouse Locator in `~/Applications`, installs its System Settings
 pane in `~/Library/PreferencePanes`, registers it to launch at login, and starts
-it. Running the same command later upgrades and re-registers the application.
-If macOS requires approval, System Settings opens to Login Items.
+it. Running the same command later upgrades the application and keeps launch at
+login registered. If macOS requires approval, System Settings opens to Login
+Items.
 
 ## Uninstall
 
