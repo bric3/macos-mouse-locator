@@ -143,6 +143,12 @@ private final class OverlayController: NSObject {
       name: NSApplication.didChangeScreenParametersNotification,
       object: nil
     )
+    DistributedNotificationCenter.default().addObserver(
+      self,
+      selector: #selector(accessibilityStatusRequested),
+      name: LocatorSettings.accessibilityStatusRequest,
+      object: nil
+    )
 
     let mouseEvents: NSEvent.EventTypeMask = [
       .mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged,
@@ -188,18 +194,25 @@ private final class OverlayController: NSObject {
     modifierPulseObserver?.cancel()
     modifierPulseObserver = nil
     NotificationCenter.default.removeObserver(self)
+    DistributedNotificationCenter.default().removeObserver(self)
     panels.forEach { $0.close() }
     panels.removeAll()
   }
 
-  private func setModifierPulseMonitoring(_ enabled: Bool) {
+  private func setModifierPulseMonitoring(_ enabled: Bool, prompt: Bool = true) {
     modifierEventMonitors.forEach(NSEvent.removeMonitor)
     modifierEventMonitors.removeAll()
     modifierTapDetector.reset()
-    guard enabled else { return }
 
-    let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
-    guard AXIsProcessTrustedWithOptions([promptKey: true] as CFDictionary) else { return }
+    let trusted: Bool
+    if enabled, prompt {
+      let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+      trusted = AXIsProcessTrustedWithOptions([promptKey: true] as CFDictionary)
+    } else {
+      trusted = AXIsProcessTrusted()
+    }
+    LocatorSettings.shared.publishAccessibilityStatus(trusted)
+    guard enabled, trusted else { return }
 
     let events: NSEvent.EventTypeMask = [.flagsChanged, .keyDown]
     if let monitor = NSEvent.addGlobalMonitorForEvents(
@@ -237,6 +250,13 @@ private final class OverlayController: NSObject {
     ) {
       modifierEventMonitors.append(monitor)
     }
+  }
+
+  @objc private func accessibilityStatusRequested(_ notification: Notification) {
+    setModifierPulseMonitoring(
+      LocatorSettings.shared.modifierPulseEnabled,
+      prompt: false
+    )
   }
 
   private func handleModifierEvent(isKeyDown: Bool, flags: UInt, timestamp: TimeInterval) {

@@ -7,6 +7,13 @@ import SwiftUI
 
 @objc(MouseLocatorPreferencePane)
 final class MouseLocatorPreferencePane: NSPreferencePane {
+  override func didSelect() {
+    super.didSelect()
+    MainActor.assumeIsolated {
+      LocatorSettings.shared.requestAccessibilityStatus()
+    }
+  }
+
   override func willUnselect() {
     MainActor.assumeIsolated {
       LocatorSettings.shared.flush()
