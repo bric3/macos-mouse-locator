@@ -38,6 +38,7 @@ app: release
 	mkdir -p $(APP_BUNDLE)/Contents/MacOS $(APP_BUNDLE)/Contents/Resources
 	cp .build/release/MouseLocator $(APP_BUNDLE)/Contents/MacOS/MouseLocator
 	cp Resources/Info.plist $(APP_BUNDLE)/Contents/Info.plist
+	cp Resources/MouseLocator.icns $(APP_BUNDLE)/Contents/Resources/MouseLocator.icns
 	cp -R Resources/*.lproj $(APP_BUNDLE)/Contents/Resources/
 	codesign --force --sign - $(APP_BUNDLE)
 
