@@ -34,6 +34,18 @@ let controlValues = TailGeometry.bezierControlValues(
 precondition(controlValues.first == 8)
 precondition(controlValues.second == 10)
 
+var modifierTap = ModifierTapDetector()
+precondition(!modifierTap.update(isPressed: true, isAlone: true, at: 1, maximumDuration: 0.35))
+precondition(modifierTap.update(isPressed: false, isAlone: true, at: 1.3, maximumDuration: 0.35))
+precondition(!modifierTap.update(isPressed: true, isAlone: true, at: 2, maximumDuration: 0.35))
+precondition(!modifierTap.update(isPressed: false, isAlone: true, at: 2.4, maximumDuration: 0.35))
+precondition(!modifierTap.update(isPressed: true, isAlone: true, at: 3, maximumDuration: 0.35))
+modifierTap.cancel()
+precondition(!modifierTap.update(isPressed: false, isAlone: true, at: 3.1, maximumDuration: 0.35))
+precondition(!modifierTap.update(isPressed: true, isAlone: true, at: 4, maximumDuration: 0.35))
+precondition(!modifierTap.update(isPressed: true, isAlone: false, at: 4.1, maximumDuration: 0.35))
+precondition(!modifierTap.update(isPressed: false, isAlone: false, at: 4.2, maximumDuration: 0.35))
+
 let home = URL(fileURLWithPath: "/Users/test", isDirectory: true)
 precondition(
   ConfigurationLocation.settingsURL(xdgConfigHome: nil, homeDirectory: home).path

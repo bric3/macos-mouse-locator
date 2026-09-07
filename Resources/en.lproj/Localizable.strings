@@ -25,6 +25,12 @@
 "Cursor gap" = "Cursor gap";
 
 "Pulse when the pointer moves after being idle" = "Pulse when the pointer moves after being idle";
+"Pulse on modifier key tap" = "Pulse on modifier key tap";
+"Modifier key" = "Modifier key";
+"Control" = "Control";
+"Option" = "Option";
+"Command" = "Command";
+"Requires access in Privacy & Security > Accessibility. Restart Mouse Locator after granting access." = "Requires access in Privacy & Security > Accessibility. Restart Mouse Locator after granting access.";
 "Circle color" = "Circle color";
 "Inactivity delay" = "Inactivity delay";
 "Expansion speed" = "Expansion speed";

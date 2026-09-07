@@ -41,6 +41,43 @@ public enum TailGeometry {
   }
 }
 
+public struct ModifierTapDetector {
+  private var pressedAt: TimeInterval?
+  private var cancelled = false
+
+  public init() {}
+
+  public mutating func update(
+    isPressed: Bool,
+    isAlone: Bool,
+    at time: TimeInterval,
+    maximumDuration: TimeInterval
+  ) -> Bool {
+    if isPressed {
+      if pressedAt == nil, isAlone {
+        pressedAt = time
+        cancelled = false
+      } else if !isAlone {
+        cancelled = true
+      }
+      return false
+    }
+
+    defer { reset() }
+    guard let pressedAt, time >= pressedAt else { return false }
+    return !cancelled && time - pressedAt <= maximumDuration
+  }
+
+  public mutating func cancel() {
+    if pressedAt != nil { cancelled = true }
+  }
+
+  public mutating func reset() {
+    pressedAt = nil
+    cancelled = false
+  }
+}
+
 public enum ConfigurationLocation {
   public static func settingsURL(xdgConfigHome: String?, homeDirectory: URL) -> URL {
     settingsDirectory(xdgConfigHome: xdgConfigHome, homeDirectory: homeDirectory)

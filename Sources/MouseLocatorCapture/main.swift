@@ -335,6 +335,9 @@ private struct Scenario {
 
 private struct Settings {
   let menuBarIconEnabled = false
+  let modifierPulseEnabled = false
+  let modifierPulseKey = "control"
+  let modifierTapDuration = 0.35
   let sonarColor: String
   let sonarDelay = 1.0
   let sonarEnabled: Bool
@@ -366,9 +369,13 @@ private struct Settings {
         header: [
           "Mouse Locator settings",
           "Key names are not stable yet and may change before the first stable release.",
+          "modifierTapDuration is the maximum modifier-only tap length in seconds.",
         ],
         fields: [
           ("menuBarIconEnabled", String(menuBarIconEnabled)),
+          ("modifierPulseEnabled", String(modifierPulseEnabled)),
+          ("modifierPulseKey", FlatTOML.quoted(modifierPulseKey)),
+          ("modifierTapDuration", String(modifierTapDuration)),
           ("tailEnabled", String(tailEnabled)),
           ("tailActivationMode", FlatTOML.quoted(tailActivationMode)),
           ("tailInactivityDelay", String(tailInactivityDelay)),
