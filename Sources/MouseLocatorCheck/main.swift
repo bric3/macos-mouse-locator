@@ -37,14 +37,39 @@ precondition(controlValues.second == 10)
 let home = URL(fileURLWithPath: "/Users/test", isDirectory: true)
 precondition(
   ConfigurationLocation.settingsURL(xdgConfigHome: nil, homeDirectory: home).path
-    == "/Users/test/.config/mouse-locator/settings.json"
+    == "/Users/test/.config/mouse-locator/settings.toml"
 )
 precondition(
   ConfigurationLocation.settingsURL(xdgConfigHome: "/tmp/config", homeDirectory: home).path
-    == "/tmp/config/mouse-locator/settings.json"
+    == "/tmp/config/mouse-locator/settings.toml"
 )
 precondition(
   ConfigurationLocation.settingsURL(xdgConfigHome: "relative", homeDirectory: home).path
+    == "/Users/test/.config/mouse-locator/settings.toml"
+)
+precondition(
+  ConfigurationLocation.legacySettingsURL(xdgConfigHome: nil, homeDirectory: home).path
     == "/Users/test/.config/mouse-locator/settings.json"
 )
+
+let tomlSource = try FlatTOML.document(
+  header: ["Settings", "Key names are not stable yet."],
+  fields: [
+    ("enabled", "true"),
+    ("duration", "0.35"),
+    ("modifier", FlatTOML.quoted("control")),
+  ]
+)
+let toml = try FlatTOML(tomlSource)
+let tomlEnabled = try toml.bool("enabled")
+let tomlDuration = try toml.double("duration")
+let tomlModifier = try toml.string("modifier")
+precondition(tomlEnabled == true)
+precondition(tomlDuration == 0.35)
+precondition(tomlModifier == "control")
+precondition(tomlSource.contains("# Key names are not stable yet."))
+do {
+  _ = try FlatTOML("enabled = maybe").bool("enabled")
+  preconditionFailure("Invalid TOML boolean was accepted")
+} catch {}
 print("Mouse Locator checks passed")

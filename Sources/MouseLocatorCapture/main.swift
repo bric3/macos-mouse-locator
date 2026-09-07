@@ -5,6 +5,7 @@ import AppKit
 import CoreGraphics
 import Darwin
 import ImageIO
+import MouseLocatorCore
 import ScreenCaptureKit
 
 private let width = 900
@@ -165,15 +166,13 @@ private func capture(
     : CGPoint(x: captureOrigin.x + CGFloat(width) / 2 - 2, y: captureOrigin.y + CGFloat(height) / 2)
   try warpCursor(to: start)
 
-  let settingsURL = configHome.appendingPathComponent("mouse-locator/settings.json")
+  let settingsURL = configHome.appendingPathComponent("mouse-locator/settings.toml")
   try FileManager.default.createDirectory(
     at: settingsURL.deletingLastPathComponent(),
     withIntermediateDirectories: true
   )
-  let encoder = JSONEncoder()
-  encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-  try encoder.encode(Settings(scenario: scenario, dark: dark)).write(
-    to: settingsURL, options: .atomic)
+  try Settings(scenario: scenario, dark: dark).toml.write(
+    to: settingsURL, atomically: true, encoding: .utf8)
 
   let overlay = Process()
   overlay.executableURL = app
@@ -334,7 +333,8 @@ private struct Scenario {
   let rainbow: Bool
 }
 
-private struct Settings: Encodable {
+private struct Settings {
+  let menuBarIconEnabled = false
   let sonarColor: String
   let sonarDelay = 1.0
   let sonarEnabled: Bool
@@ -358,6 +358,36 @@ private struct Settings: Encodable {
     tailColor = sonarColor
     tailEnabled = scenario.tail
     tailRainbow = scenario.rainbow
+  }
+
+  var toml: String {
+    get throws {
+      try FlatTOML.document(
+        header: [
+          "Mouse Locator settings",
+          "Key names are not stable yet and may change before the first stable release.",
+        ],
+        fields: [
+          ("menuBarIconEnabled", String(menuBarIconEnabled)),
+          ("tailEnabled", String(tailEnabled)),
+          ("tailActivationMode", FlatTOML.quoted(tailActivationMode)),
+          ("tailInactivityDelay", String(tailInactivityDelay)),
+          ("tailColor", FlatTOML.quoted(tailColor)),
+          ("tailRainbow", String(tailRainbow)),
+          ("tailThickness", String(tailThickness)),
+          ("tailGap", String(tailGap)),
+          ("tailDotsEnabled", String(tailDotsEnabled)),
+          ("tailSmoothing", FlatTOML.quoted(tailSmoothing)),
+          ("sonarEnabled", String(sonarEnabled)),
+          ("sonarDelay", String(sonarDelay)),
+          ("sonarColor", FlatTOML.quoted(sonarColor)),
+          ("sonarRainbow", String(sonarRainbow)),
+          ("sonarExpansionSpeed", String(sonarExpansionSpeed)),
+          ("sonarThickness", String(sonarThickness)),
+          ("sonarSize", String(sonarSize)),
+        ]
+      )
+    }
   }
 }
 

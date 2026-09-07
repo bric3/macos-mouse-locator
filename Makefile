@@ -49,6 +49,7 @@ prefpane: release
 		Sources/MouseLocator/SettingsView.swift \
 		Sources/MouseLocatorPreferencePane/MouseLocatorPreferencePane.swift \
 		.build/release/MouseLocatorCore.build/EffectTiming.swift.o \
+		.build/release/MouseLocatorCore.build/FlatTOML.swift.o \
 		-framework AppKit -framework PreferencePanes -framework SwiftUI \
 		-o $(PREFPANE_BUNDLE)/Contents/MacOS/MouseLocatorPreferences
 	cp Resources/PreferencePane-Info.plist $(PREFPANE_BUNDLE)/Contents/Info.plist

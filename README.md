@@ -65,9 +65,9 @@ application and System Settings pane. Saved settings are kept.
 
 ## Configuration
 
-Preferences are stored in `$XDG_CONFIG_HOME/mouse-locator/settings.json`, or
-`~/.config/mouse-locator/settings.json` when `XDG_CONFIG_HOME` is unset. Existing
-preferences are migrated automatically on first launch.
+Preferences are stored in `$XDG_CONFIG_HOME/mouse-locator/settings.toml`, or
+`~/.config/mouse-locator/settings.toml` when `XDG_CONFIG_HOME` is unset. Existing
+JSON preferences are imported automatically on first launch and retained as a backup.
 
 Settings intended for manual editing only:
 
@@ -76,7 +76,7 @@ Settings intended for manual editing only:
 - `tailSmoothing`: defaults to `"bezier"`; set it to `"none"` for straight
   segments.
 
-Restart Mouse Locator after editing the JSON file manually.
+Restart Mouse Locator after editing the TOML file manually.
 
 ## Contributing
 

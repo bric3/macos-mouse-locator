@@ -55,9 +55,14 @@ final class LocatorSettings: NSObject, ObservableObject {
     let commandLineConfigHome = CommandLine.arguments
       .first { $0.hasPrefix("--config-home=") }
       .map { String($0.dropFirst("--config-home=".count)) }
+    let configHome = commandLineConfigHome
+      ?? ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"]
     configurationURL = ConfigurationLocation.settingsURL(
-      xdgConfigHome: commandLineConfigHome
-        ?? ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"],
+      xdgConfigHome: configHome,
+      homeDirectory: fileManager.homeDirectoryForCurrentUser
+    )
+    let legacyConfigurationURL = ConfigurationLocation.legacySettingsURL(
+      xdgConfigHome: configHome,
       homeDirectory: fileManager.homeDirectoryForCurrentUser
     )
 
@@ -65,11 +70,21 @@ final class LocatorSettings: NSObject, ObservableObject {
     let stored: StoredSettings
     if fileManager.fileExists(atPath: configurationURL.path) {
       do {
-        stored = try JSONDecoder().decode(
-          StoredSettings.self,
-          from: Data(contentsOf: configurationURL)
+        stored = try StoredSettings(
+          toml: String(contentsOf: configurationURL, encoding: .utf8)
         )
         shouldSave = stored.needsUpgrade
+      } catch {
+        stored = StoredSettings()
+        storageError = L10n.format("Could not read settings: %@", error.localizedDescription)
+      }
+    } else if fileManager.fileExists(atPath: legacyConfigurationURL.path) {
+      do {
+        stored = try JSONDecoder().decode(
+          StoredSettings.self,
+          from: Data(contentsOf: legacyConfigurationURL)
+        )
+        shouldSave = true
       } catch {
         stored = StoredSettings()
         storageError = L10n.format("Could not read settings: %@", error.localizedDescription)
@@ -134,10 +149,7 @@ final class LocatorSettings: NSObject, ObservableObject {
         at: configurationURL.deletingLastPathComponent(),
         withIntermediateDirectories: true
       )
-      let encoder = JSONEncoder()
-      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-      try encoder.encode(
-        StoredSettings(
+      try StoredSettings(
           menuBarIconEnabled: menuBarIconEnabled,
           sonarDelay: sonarDelay,
           sonarEnabled: sonarEnabled,
@@ -155,8 +167,7 @@ final class LocatorSettings: NSObject, ObservableObject {
           tailRainbow: tailRainbow,
           tailSmoothing: tailSmoothing,
           tailThickness: tailThickness
-        )
-      ).write(to: configurationURL, options: .atomic)
+        ).toml.write(to: configurationURL, atomically: true, encoding: .utf8)
       storageError = nil
       DistributedNotificationCenter.default().postNotificationName(
         Self.changedNotification,
@@ -174,9 +185,8 @@ final class LocatorSettings: NSObject, ObservableObject {
     pendingSave?.cancel()
     pendingSave = nil
     do {
-      let stored = try JSONDecoder().decode(
-        StoredSettings.self,
-        from: Data(contentsOf: configurationURL)
+      let stored = try StoredSettings(
+        toml: String(contentsOf: configurationURL, encoding: .utf8)
       )
       isReady = false
       menuBarIconEnabled = stored.menuBarIconEnabled ?? true
@@ -278,6 +288,57 @@ private struct StoredSettings: Codable {
     sonarThickness = (legacy["sonarThickness"] as? NSNumber)?.doubleValue ?? sonarThickness
     tailEnabled = (legacy["tailEnabled"] as? NSNumber)?.boolValue ?? tailEnabled
     tailThickness = (legacy["tailSize"] as? NSNumber)?.doubleValue ?? tailThickness
+  }
+
+  init(toml source: String) throws {
+    let toml = try FlatTOML(source)
+    menuBarIconEnabled = try toml.bool("menuBarIconEnabled")
+    sonarDelay = try toml.double("sonarDelay") ?? sonarDelay
+    sonarEnabled = try toml.bool("sonarEnabled") ?? sonarEnabled
+    sonarColor = try toml.string("sonarColor")
+    sonarExpansionSpeed = try toml.double("sonarExpansionSpeed")
+    sonarRainbow = try toml.bool("sonarRainbow")
+    sonarSize = try toml.double("sonarSize") ?? sonarSize
+    sonarThickness = try toml.double("sonarThickness") ?? sonarThickness
+    tailColor = try toml.string("tailColor")
+    tailActivationMode = try toml.string("tailActivationMode")
+    tailDotsEnabled = try toml.bool("tailDotsEnabled")
+    tailEnabled = try toml.bool("tailEnabled") ?? tailEnabled
+    tailGap = try toml.double("tailGap")
+    tailInactivityDelay = try toml.double("tailInactivityDelay")
+    tailRainbow = try toml.bool("tailRainbow")
+    tailSmoothing = try toml.string("tailSmoothing")
+    tailThickness = try toml.double("tailThickness") ?? tailThickness
+  }
+
+  var toml: String {
+    get throws {
+      try FlatTOML.document(
+        header: [
+          "Mouse Locator settings",
+          "Key names are not stable yet and may change before the first stable release.",
+        ],
+        fields: [
+          ("menuBarIconEnabled", String(menuBarIconEnabled ?? true)),
+          ("tailEnabled", String(tailEnabled)),
+          ("tailActivationMode", FlatTOML.quoted(tailActivationMode ?? "always")),
+          ("tailInactivityDelay", String(tailInactivityDelay ?? 3)),
+          ("tailColor", FlatTOML.quoted(tailColor ?? "accent")),
+          ("tailRainbow", String(tailRainbow ?? false)),
+          ("tailThickness", String(tailThickness)),
+          ("tailGap", String(tailGap ?? 16)),
+          ("tailDotsEnabled", String(tailDotsEnabled ?? false)),
+          ("tailSmoothing", FlatTOML.quoted(tailSmoothing ?? "bezier")),
+          ("sonarEnabled", String(sonarEnabled)),
+          ("sonarDelay", String(sonarDelay)),
+          ("sonarColor", FlatTOML.quoted(sonarColor ?? "accent")),
+          ("sonarRainbow", String(sonarRainbow ?? false)),
+          ("sonarExpansionSpeed", String(sonarExpansionSpeed ?? 1)),
+          ("sonarThickness", String(sonarThickness)),
+          ("sonarSize", String(sonarSize)),
+        ]
+      )
+    }
   }
 }
 

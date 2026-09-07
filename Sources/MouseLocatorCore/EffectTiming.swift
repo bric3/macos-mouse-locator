@@ -43,6 +43,16 @@ public enum TailGeometry {
 
 public enum ConfigurationLocation {
   public static func settingsURL(xdgConfigHome: String?, homeDirectory: URL) -> URL {
+    settingsDirectory(xdgConfigHome: xdgConfigHome, homeDirectory: homeDirectory)
+      .appendingPathComponent("settings.toml")
+  }
+
+  public static func legacySettingsURL(xdgConfigHome: String?, homeDirectory: URL) -> URL {
+    settingsDirectory(xdgConfigHome: xdgConfigHome, homeDirectory: homeDirectory)
+      .appendingPathComponent("settings.json")
+  }
+
+  private static func settingsDirectory(xdgConfigHome: String?, homeDirectory: URL) -> URL {
     let configHome = xdgConfigHome.flatMap { path in
       guard !path.isEmpty, NSString(string: path).isAbsolutePath else { return nil }
       return URL(fileURLWithPath: path, isDirectory: true)
@@ -50,6 +60,5 @@ public enum ConfigurationLocation {
 
     return configHome
       .appendingPathComponent("mouse-locator", isDirectory: true)
-      .appendingPathComponent("settings.json")
   }
 }
