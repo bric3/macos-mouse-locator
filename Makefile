@@ -8,6 +8,7 @@ PREFPANE_INSTALL_DIR ?= $(HOME)/Library/PreferencePanes
 INSTALLED_APP := $(INSTALL_DIR)/MouseLocator.app
 INSTALLED_PREFPANE := $(PREFPANE_INSTALL_DIR)/MouseLocator.prefPane
 SWIFT_TARGET := $(shell uname -m)-apple-macosx14.0
+CODESIGN_IDENTITY ?= -
 LOPS ?= lops
 
 .PHONY: build test release app prefpane screenshots install uninstall run clean \
@@ -40,7 +41,7 @@ app: release
 	cp Resources/Info.plist $(APP_BUNDLE)/Contents/Info.plist
 	cp Resources/MouseLocator.icns $(APP_BUNDLE)/Contents/Resources/MouseLocator.icns
 	cp -R Resources/*.lproj $(APP_BUNDLE)/Contents/Resources/
-	codesign --force --sign - $(APP_BUNDLE)
+	codesign --force --sign "$(CODESIGN_IDENTITY)" $(APP_BUNDLE)
 
 prefpane: release
 	mkdir -p $(PREFPANE_BUNDLE)/Contents/MacOS $(PREFPANE_BUNDLE)/Contents/Resources
@@ -56,7 +57,7 @@ prefpane: release
 	cp Resources/PreferencePane-Info.plist $(PREFPANE_BUNDLE)/Contents/Info.plist
 	cp Resources/MouseLocator.icns $(PREFPANE_BUNDLE)/Contents/Resources/MouseLocator.icns
 	cp -R Resources/*.lproj $(PREFPANE_BUNDLE)/Contents/Resources/
-	codesign --force --sign - $(PREFPANE_BUNDLE)
+	codesign --force --sign "$(CODESIGN_IDENTITY)" $(PREFPANE_BUNDLE)
 
 screenshots: app
 	.build/release/MouseLocatorCapture --check-permissions
@@ -66,10 +67,13 @@ install: app prefpane
 	mkdir -p "$(INSTALL_DIR)"
 	mkdir -p "$(PREFPANE_INSTALL_DIR)"
 	-@pkill -f "^$(INSTALLED_APP)/Contents/MacOS/MouseLocator( |$$)" 2>/dev/null
+ifeq ($(CODESIGN_IDENTITY),-)
+	tccutil reset ListenEvent dev.brice.MouseLocator
+endif
 	ditto "$(APP_BUNDLE)" "$(INSTALLED_APP)"
-	codesign --force --sign - "$(INSTALLED_APP)"
+	codesign --force --sign "$(CODESIGN_IDENTITY)" "$(INSTALLED_APP)"
 	ditto "$(PREFPANE_BUNDLE)" "$(INSTALLED_PREFPANE)"
-	codesign --force --sign - "$(INSTALLED_PREFPANE)"
+	codesign --force --sign "$(CODESIGN_IDENTITY)" "$(INSTALLED_PREFPANE)"
 	touch "$(PREFPANE_INSTALL_DIR)"
 	open -n "$(INSTALLED_APP)" --args --register-login
 

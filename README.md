@@ -54,6 +54,14 @@ it. Running the same command later upgrades the application and keeps launch at
 login registered. If macOS requires approval, System Settings opens to Login
 Items.
 
+Local ad-hoc builds reset Mouse Locator's Input Monitoring grant during installation
+because their signing identity changes after each rebuild. Grant access again when
+prompted. To preserve it across upgrades, install with a stable signing identity:
+
+```sh
+make install CODESIGN_IDENTITY="Apple Development: Your Name (TEAMID)"
+```
+
 ## Uninstall
 
 ```sh
