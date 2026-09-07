@@ -22,12 +22,12 @@ enum L10n {
 @MainActor
 final class LocatorSettings: NSObject, ObservableObject {
   static let shared = LocatorSettings()
-  static let accessibilityStatusRequest = Notification.Name(
-    "dev.brice.MouseLocator.accessibilityStatusRequest")
+  static let inputMonitoringStatusRequest = Notification.Name(
+    "dev.brice.MouseLocator.inputMonitoringStatusRequest")
   private static let changedNotification = Notification.Name(
     "dev.brice.MouseLocator.settingsChanged")
-  private static let accessibilityStatusNotification = Notification.Name(
-    "dev.brice.MouseLocator.accessibilityStatusChanged")
+  private static let inputMonitoringStatusNotification = Notification.Name(
+    "dev.brice.MouseLocator.inputMonitoringStatusChanged")
 
   @Published var menuBarIconEnabled: Bool { didSet { saveNow() } }
   @Published var modifierPulseEnabled: Bool { didSet { saveNow() } }
@@ -49,7 +49,7 @@ final class LocatorSettings: NSObject, ObservableObject {
   @Published var tailRainbow: Bool { didSet { saveNow() } }
   @Published var tailSmoothing: String { didSet { saveNow() } }
   @Published var tailThickness: Double { didSet { scheduleSave() } }
-  @Published private(set) var accessibilityPermissionGranted: Bool?
+  @Published private(set) var inputMonitoringPermissionGranted: Bool?
   @Published private(set) var storageError: String?
 
   let configurationURL: URL
@@ -136,25 +136,25 @@ final class LocatorSettings: NSObject, ObservableObject {
     )
     DistributedNotificationCenter.default().addObserver(
       self,
-      selector: #selector(accessibilityStatusChanged(_:)),
-      name: Self.accessibilityStatusNotification,
+      selector: #selector(inputMonitoringStatusChanged(_:)),
+      name: Self.inputMonitoringStatusNotification,
       object: nil
     )
   }
 
-  func requestAccessibilityStatus() {
+  func requestInputMonitoringStatus() {
     DistributedNotificationCenter.default().postNotificationName(
-      Self.accessibilityStatusRequest,
+      Self.inputMonitoringStatusRequest,
       object: notificationSender,
       userInfo: nil,
       deliverImmediately: true
     )
   }
 
-  func publishAccessibilityStatus(_ granted: Bool) {
-    accessibilityPermissionGranted = granted
+  func publishInputMonitoringStatus(_ granted: Bool) {
+    inputMonitoringPermissionGranted = granted
     DistributedNotificationCenter.default().postNotificationName(
-      Self.accessibilityStatusNotification,
+      Self.inputMonitoringStatusNotification,
       object: notificationSender,
       userInfo: ["granted": NSNumber(value: granted)],
       deliverImmediately: true
@@ -256,9 +256,9 @@ final class LocatorSettings: NSObject, ObservableObject {
     }
   }
 
-  @objc private func accessibilityStatusChanged(_ notification: Notification) {
+  @objc private func inputMonitoringStatusChanged(_ notification: Notification) {
     guard let granted = notification.userInfo?["granted"] as? NSNumber else { return }
-    accessibilityPermissionGranted = granted.boolValue
+    inputMonitoringPermissionGranted = granted.boolValue
   }
 }
 
@@ -489,21 +489,21 @@ struct SettingsView: View {
 
         if settings.modifierPulseEnabled {
           HStack {
-            if settings.accessibilityPermissionGranted == true {
-              Label(L10n.text("Accessibility access granted"), systemImage: "checkmark.circle.fill")
+            if settings.inputMonitoringPermissionGranted == true {
+              Label(L10n.text("Input Monitoring access granted"), systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green)
-            } else if settings.accessibilityPermissionGranted == false {
+            } else if settings.inputMonitoringPermissionGranted == false {
               Label(
-                L10n.text("Accessibility access is required"),
+                L10n.text("Input Monitoring access is required"),
                 systemImage: "exclamationmark.triangle.fill"
               )
               .foregroundStyle(.secondary)
               Spacer()
-              Button(L10n.text("Open Accessibility Settings")) {
-                openAccessibilitySettings()
+              Button(L10n.text("Open Input Monitoring Settings")) {
+                openInputMonitoringSettings()
               }
             } else {
-              Label(L10n.text("Checking Accessibility access…"), systemImage: "hourglass")
+              Label(L10n.text("Checking Input Monitoring access…"), systemImage: "hourglass")
                 .foregroundStyle(.secondary)
             }
           }
@@ -589,7 +589,7 @@ struct SettingsView: View {
 
     }
     .formStyle(.grouped)
-    .onAppear { settings.requestAccessibilityStatus() }
+    .onAppear { settings.requestInputMonitoringStatus() }
   }
 
   private var tailColor: Binding<Color> {
@@ -610,10 +610,10 @@ struct SettingsView: View {
     settings.sonarEnabled || settings.modifierPulseEnabled
   }
 
-  private func openAccessibilitySettings() {
+  private func openInputMonitoringSettings() {
     guard
       let url = URL(
-        string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+        string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")
     else { return }
     NSWorkspace.shared.open(url)
   }

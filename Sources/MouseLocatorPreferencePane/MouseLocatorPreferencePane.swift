@@ -10,7 +10,7 @@ final class MouseLocatorPreferencePane: NSPreferencePane {
   override func didSelect() {
     super.didSelect()
     MainActor.assumeIsolated {
-      LocatorSettings.shared.requestAccessibilityStatus()
+      LocatorSettings.shared.requestInputMonitoringStatus()
     }
   }
 

@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import AppKit
-@preconcurrency import ApplicationServices
 import Combine
+import CoreGraphics
 import MouseLocatorCore
 import ServiceManagement
 
@@ -145,8 +145,8 @@ private final class OverlayController: NSObject {
     )
     DistributedNotificationCenter.default().addObserver(
       self,
-      selector: #selector(accessibilityStatusRequested),
-      name: LocatorSettings.accessibilityStatusRequest,
+      selector: #selector(inputMonitoringStatusRequested),
+      name: LocatorSettings.inputMonitoringStatusRequest,
       object: nil
     )
 
@@ -204,15 +204,11 @@ private final class OverlayController: NSObject {
     modifierEventMonitors.removeAll()
     modifierTapDetector.reset()
 
-    let trusted: Bool
-    if enabled, prompt {
-      let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
-      trusted = AXIsProcessTrustedWithOptions([promptKey: true] as CFDictionary)
-    } else {
-      trusted = AXIsProcessTrusted()
-    }
-    LocatorSettings.shared.publishAccessibilityStatus(trusted)
-    guard enabled, trusted else { return }
+    let granted = enabled && prompt
+      ? CGRequestListenEventAccess()
+      : CGPreflightListenEventAccess()
+    LocatorSettings.shared.publishInputMonitoringStatus(granted)
+    guard enabled, granted else { return }
 
     let events: NSEvent.EventTypeMask = [.flagsChanged, .keyDown]
     if let monitor = NSEvent.addGlobalMonitorForEvents(
@@ -252,7 +248,7 @@ private final class OverlayController: NSObject {
     }
   }
 
-  @objc private func accessibilityStatusRequested(_ notification: Notification) {
+  @objc private func inputMonitoringStatusRequested(_ notification: Notification) {
     setModifierPulseMonitoring(
       LocatorSettings.shared.modifierPulseEnabled,
       prompt: false
