@@ -1,6 +1,7 @@
 import AppKit
 import CoreGraphics
 import Darwin
+import ImageIO
 import ScreenCaptureKit
 
 private let width = 900
@@ -180,45 +181,102 @@ private func capture(
     overlay.waitUntilExit()
   }
 
-  try await pause(milliseconds: scenario.pulse ? 1_800 : 500)
-  if scenario.tail {
-    for step in 0...70 {
-      let progress = CGFloat(step) / 70
-      try warpCursor(
-        to: CGPoint(
-          x: captureOrigin.x + 120 + CGFloat(width - 240) * progress,
-          y: captureOrigin.y + CGFloat(height) * 0.75
-            - CGFloat(height) * 0.42 * sin(.pi * progress)
-            + 35 * sin(2 * .pi * progress)
-        )
-      )
-      try await pause(milliseconds: 5)
-    }
-  } else {
-    try warpCursor(to: CGPoint(x: start.x + 4, y: start.y))
-    try await pause(milliseconds: 1_000)
-  }
-  try await pause(milliseconds: 40)
-
   let configuration = SCStreamConfiguration()
   configuration.sourceRect = sourceRect
   configuration.width = width
   configuration.height = height
   configuration.showsCursor = true
-  let image = try await SCScreenshotManager.captureImage(
+
+  try await pause(milliseconds: scenario.pulse ? 1_800 : 500)
+  var frames: [CGImage] = []
+  if scenario.tail {
+    let movementFrames = 24
+    let movementsPerFrame = 3
+    for frame in 1...movementFrames {
+      for movement in 1...movementsPerFrame {
+        let progress =
+          CGFloat((frame - 1) * movementsPerFrame + movement)
+          / CGFloat(movementFrames * movementsPerFrame)
+        try warpCursor(
+          to: CGPoint(
+            x: captureOrigin.x + 120 + CGFloat(width - 240) * progress,
+            y: captureOrigin.y + CGFloat(height) * 0.75
+              - CGFloat(height) * 0.42 * sin(.pi * progress)
+              + 35 * sin(2 * .pi * progress)
+          )
+        )
+        try await pause(milliseconds: 4)
+      }
+      try await pause(milliseconds: 12)
+      frames.append(try await captureFrame(filter: filter, configuration: configuration))
+    }
+    for _ in 0..<(scenario.pulse ? 16 : 8) {
+      try await pause(milliseconds: 70)
+      frames.append(try await captureFrame(filter: filter, configuration: configuration))
+    }
+  } else {
+    try warpCursor(to: CGPoint(x: start.x + 4, y: start.y))
+    for _ in 0..<36 {
+      try await pause(milliseconds: 55)
+      frames.append(try await captureFrame(filter: filter, configuration: configuration))
+    }
+  }
+
+  let appearance = dark ? "dark" : "light"
+  try writeAnimatedPNG(
+    frames,
+    to: output.appendingPathComponent("\(scenario.name)-\(appearance).png")
+  )
+}
+
+@MainActor
+private func captureFrame(
+  filter: SCContentFilter,
+  configuration: SCStreamConfiguration
+) async throws -> CGImage {
+  try await SCScreenshotManager.captureImage(
     contentFilter: filter,
     configuration: configuration
   )
+}
+
+private func writeAnimatedPNG(_ frames: [CGImage], to url: URL) throws {
+  let temporaryURL = url.deletingLastPathComponent()
+    .appendingPathComponent(".\(url.lastPathComponent).tmp")
+  defer { try? FileManager.default.removeItem(at: temporaryURL) }
+
   guard
-    let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
+    let destination = CGImageDestinationCreateWithURL(
+      temporaryURL as CFURL,
+      "public.png" as CFString,
+      frames.count,
+      nil
+    )
   else {
-    throw CaptureError("Could not encode \(scenario.name) as PNG")
+    throw CaptureError("Could not create \(url.lastPathComponent)")
   }
-  let appearance = dark ? "dark" : "light"
-  try png.write(
-    to: output.appendingPathComponent("\(scenario.name)-\(appearance).png"),
-    options: .atomic
+
+  CGImageDestinationSetProperties(
+    destination,
+    [
+      kCGImagePropertyPNGDictionary as String: [
+        kCGImagePropertyAPNGLoopCount as String: 0
+      ]
+    ] as CFDictionary
   )
+  let frameProperties =
+    [
+      kCGImagePropertyPNGDictionary as String: [
+        kCGImagePropertyAPNGDelayTime as String: 1.0 / 12
+      ]
+    ] as CFDictionary
+  for frame in frames {
+    CGImageDestinationAddImage(destination, frame, frameProperties)
+  }
+  guard CGImageDestinationFinalize(destination) else {
+    throw CaptureError("Could not finish \(url.lastPathComponent)")
+  }
+  try Data(contentsOf: temporaryURL).write(to: url, options: .atomic)
 }
 
 @MainActor
@@ -248,12 +306,13 @@ private func verifyScreenshots(in output: URL) throws {
     for appearance in ["light", "dark"] {
       let url = output.appendingPathComponent("\(scenario.name)-\(appearance).png")
       guard
-        let data = try? Data(contentsOf: url),
-        let image = NSBitmapImageRep(data: data),
-        image.pixelsWide == width,
-        image.pixelsHigh == height
+        let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+        CGImageSourceGetCount(source) > 1,
+        let image = CGImageSourceCreateImageAtIndex(source, 0, nil),
+        image.width == width,
+        image.height == height
       else {
-        throw CaptureError("Invalid screenshot: \(url.path)")
+        throw CaptureError("Invalid animated screenshot: \(url.path)")
       }
     }
   }
