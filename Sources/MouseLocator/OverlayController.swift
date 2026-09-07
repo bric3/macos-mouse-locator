@@ -193,7 +193,6 @@ private final class OverlayController: NSObject {
     panel.isOpaque = false
     panel.isReleasedWhenClosed = false
     panel.level = .statusBar
-    panel.orderFrontRegardless()
     return panel
   }
 
@@ -252,27 +251,39 @@ private final class OverlayController: NSObject {
       sonarPosition = nil
       sonarStartTime = nil
     }
+    let frameState = OverlayFrame(
+      points: points,
+      tailColor: .locatorColor(settings.tailColor),
+      tailDotsEnabled: settings.tailDotsEnabled,
+      tailGap: settings.tailGap,
+      tailLineWidth: settings.tailThickness,
+      tailRainbow: settings.tailRainbow,
+      tailSmoothing: settings.tailSmoothing,
+      now: now,
+      sonarPosition: sonarPosition,
+      sonarProgress: sonarProgress,
+      sonarColor: .locatorColor(settings.sonarColor),
+      sonarRainbow: settings.sonarRainbow,
+      sonarSize: settings.sonarSize,
+      sonarLineWidth: settings.sonarThickness
+    )
     panels.forEach { panel in
       guard let view = panel.contentView as? OverlayView else { return }
-      let frameState = OverlayFrame(
-        points: points,
-        tailColor: .locatorColor(settings.tailColor),
-        tailDotsEnabled: settings.tailDotsEnabled,
-        tailGap: settings.tailGap,
-        tailLineWidth: settings.tailThickness,
-        tailRainbow: settings.tailRainbow,
-        tailSmoothing: settings.tailSmoothing,
-        now: now,
-        sonarPosition: sonarPosition,
-        sonarProgress: sonarProgress,
-        sonarColor: .locatorColor(settings.sonarColor),
-        sonarRainbow: settings.sonarRainbow,
-        sonarSize: settings.sonarSize,
-        sonarLineWidth: settings.sonarThickness
-      )
-      if view.frameState.isVisible || frameState.isVisible {
-        view.frameState = frameState
+      let oldBounds = view.frameState.drawingBounds
+      let newBounds = frameState.drawingBounds
+      let wasVisible = panel.isVisible
+      let isVisible = newBounds.intersects(panel.frame)
+      view.frameState = frameState
+
+      if !isVisible {
+        if wasVisible { panel.orderOut(nil) }
+      } else if !wasVisible {
+        panel.orderFrontRegardless()
         view.needsDisplay = true
+      } else {
+        let dirtyBounds = oldBounds.union(newBounds).intersection(panel.frame)
+          .offsetBy(dx: -panel.frame.minX, dy: -panel.frame.minY)
+        if !dirtyBounds.isNull { view.setNeedsDisplay(dirtyBounds) }
       }
     }
     if points.isEmpty, sonarStartTime == nil {
@@ -303,8 +314,34 @@ private struct OverlayFrame {
   let sonarSize: CGFloat
   let sonarLineWidth: CGFloat
 
-  var isVisible: Bool {
-    points.count > 1 || sonarProgress != nil
+  var drawingBounds: NSRect {
+    var result = NSRect.null
+    if points.count > 1 {
+      let pointBounds = points.dropFirst().reduce(
+        NSRect(origin: points[0].position, size: NSSize(width: 1, height: 1))
+      ) { bounds, point in
+        bounds.union(NSRect(origin: point.position, size: NSSize(width: 1, height: 1)))
+      }
+      let curveMarginX = tailSmoothing == "none" ? 0 : pointBounds.width / 6
+      let curveMarginY = tailSmoothing == "none" ? 0 : pointBounds.height / 6
+      result = pointBounds.insetBy(
+        dx: -(curveMarginX + tailLineWidth),
+        dy: -(curveMarginY + tailLineWidth)
+      )
+    }
+    if let position = sonarPosition, let progress = sonarProgress {
+      let diameter = 24 + (sonarSize - 24) * progress
+      let radius = diameter / 2 + sonarLineWidth
+      result = result.union(
+        NSRect(
+          x: position.x - radius,
+          y: position.y - radius,
+          width: radius * 2,
+          height: radius * 2
+        )
+      )
+    }
+    return result
   }
 }
 
