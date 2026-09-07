@@ -9,7 +9,7 @@ struct MouseLocatorApp: App {
   var body: some Scene {
     MenuBarExtra("Mouse Locator", systemImage: "cursorarrow.rays") {
       Toggle("Mouse Tail", isOn: $settings.tailEnabled)
-      Toggle("Idle Sonar", isOn: $settings.sonarEnabled)
+      Toggle("Idle Pulse", isOn: $settings.sonarEnabled)
 
       SettingsLink {
         Text("Settings…")

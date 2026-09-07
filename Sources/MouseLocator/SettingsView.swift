@@ -244,7 +244,7 @@ struct SettingsView: View {
         .disabled(!settings.tailEnabled)
       }
 
-      Section("Idle Sonar") {
+      Section("Idle Pulse") {
         Toggle("Pulse when the pointer moves after being idle", isOn: $settings.sonarEnabled)
 
         ColorPicker("Circle color", selection: sonarColor, supportsOpacity: false)
