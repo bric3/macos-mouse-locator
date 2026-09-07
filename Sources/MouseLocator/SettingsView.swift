@@ -22,8 +22,12 @@ enum L10n {
 @MainActor
 final class LocatorSettings: NSObject, ObservableObject {
   static let shared = LocatorSettings()
+  static let accessibilityStatusRequest = Notification.Name(
+    "dev.brice.MouseLocator.accessibilityStatusRequest")
   private static let changedNotification = Notification.Name(
     "dev.brice.MouseLocator.settingsChanged")
+  private static let accessibilityStatusNotification = Notification.Name(
+    "dev.brice.MouseLocator.accessibilityStatusChanged")
 
   @Published var menuBarIconEnabled: Bool { didSet { saveNow() } }
   @Published var modifierPulseEnabled: Bool { didSet { saveNow() } }
@@ -45,6 +49,7 @@ final class LocatorSettings: NSObject, ObservableObject {
   @Published var tailRainbow: Bool { didSet { saveNow() } }
   @Published var tailSmoothing: String { didSet { saveNow() } }
   @Published var tailThickness: Double { didSet { scheduleSave() } }
+  @Published private(set) var accessibilityPermissionGranted: Bool?
   @Published private(set) var storageError: String?
 
   let configurationURL: URL
@@ -128,6 +133,31 @@ final class LocatorSettings: NSObject, ObservableObject {
       selector: #selector(reloadSettings(_:)),
       name: Self.changedNotification,
       object: nil
+    )
+    DistributedNotificationCenter.default().addObserver(
+      self,
+      selector: #selector(accessibilityStatusChanged(_:)),
+      name: Self.accessibilityStatusNotification,
+      object: nil
+    )
+  }
+
+  func requestAccessibilityStatus() {
+    DistributedNotificationCenter.default().postNotificationName(
+      Self.accessibilityStatusRequest,
+      object: notificationSender,
+      userInfo: nil,
+      deliverImmediately: true
+    )
+  }
+
+  func publishAccessibilityStatus(_ granted: Bool) {
+    accessibilityPermissionGranted = granted
+    DistributedNotificationCenter.default().postNotificationName(
+      Self.accessibilityStatusNotification,
+      object: notificationSender,
+      userInfo: ["granted": NSNumber(value: granted)],
+      deliverImmediately: true
     )
   }
 
@@ -224,6 +254,11 @@ final class LocatorSettings: NSObject, ObservableObject {
     } catch {
       storageError = L10n.format("Could not reload settings: %@", error.localizedDescription)
     }
+  }
+
+  @objc private func accessibilityStatusChanged(_ notification: Notification) {
+    guard let granted = notification.userInfo?["granted"] as? NSNumber else { return }
+    accessibilityPermissionGranted = granted.boolValue
   }
 }
 
@@ -443,7 +478,7 @@ struct SettingsView: View {
           isOn: $settings.sonarEnabled
         )
 
-        Toggle(L10n.text("Pulse on modifier key tap"), isOn: $settings.modifierPulseEnabled)
+        Toggle(L10n.text("Pulse on modifier key"), isOn: $settings.modifierPulseEnabled)
 
         Picker(L10n.text("Modifier key"), selection: $settings.modifierPulseKey) {
           Text(L10n.text("Control")).tag("control")
@@ -453,13 +488,26 @@ struct SettingsView: View {
         .disabled(!settings.modifierPulseEnabled)
 
         if settings.modifierPulseEnabled {
-          Text(
-            L10n.text(
-              "Requires access in Privacy & Security > Accessibility. Restart Mouse Locator after granting access."
-            )
-          )
+          HStack {
+            if settings.accessibilityPermissionGranted == true {
+              Label(L10n.text("Accessibility access granted"), systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+            } else if settings.accessibilityPermissionGranted == false {
+              Label(
+                L10n.text("Accessibility access is required"),
+                systemImage: "exclamationmark.triangle.fill"
+              )
+              .foregroundStyle(.secondary)
+              Spacer()
+              Button(L10n.text("Open Accessibility Settings")) {
+                openAccessibilitySettings()
+              }
+            } else {
+              Label(L10n.text("Checking Accessibility access…"), systemImage: "hourglass")
+                .foregroundStyle(.secondary)
+            }
+          }
           .font(.caption)
-          .foregroundStyle(.secondary)
         }
 
         ColorPicker(L10n.text("Circle color"), selection: sonarColor, supportsOpacity: false)
@@ -541,6 +589,7 @@ struct SettingsView: View {
 
     }
     .formStyle(.grouped)
+    .onAppear { settings.requestAccessibilityStatus() }
   }
 
   private var tailColor: Binding<Color> {
@@ -559,6 +608,14 @@ struct SettingsView: View {
 
   private var pulseEnabled: Bool {
     settings.sonarEnabled || settings.modifierPulseEnabled
+  }
+
+  private func openAccessibilitySettings() {
+    guard
+      let url = URL(
+        string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+    else { return }
+    NSWorkspace.shared.open(url)
   }
 }
 
