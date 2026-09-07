@@ -10,6 +10,8 @@
   <string>MouseLocator</string>
   <key>CFBundleIdentifier</key>
   <string>dev.brice.MouseLocator</string>
+  <key>CFBundleIconFile</key>
+  <string>MouseLocator.icns</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
