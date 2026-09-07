@@ -1,8 +1,8 @@
 # Mouse Locator
 
 [![CI](https://github.com/bric3/macos-mouse-locator/actions/workflows/ci.yml/badge.svg)](https://github.com/bric3/macos-mouse-locator/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/bric3/macos-mouse-locator/actions/workflows/codeql.yml/badge.svg)](https://github.com/bric3/macos-mouse-locator/actions/workflows/codeql.yml)
-[![Version](https://img.shields.io/badge/version-v0.1.0-blue)](https://github.com/bric3/macos-mouse-locator/tree/v0.1.0)
+[![CodeQL](https://github.com/bric3/macos-mouse-locator/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/bric3/macos-mouse-locator/actions/workflows/github-code-scanning/codeql)
+[![Latest version](https://img.shields.io/github/v/tag/bric3/macos-mouse-locator?sort=semver&label=version)](https://github.com/bric3/macos-mouse-locator/tags)
 
 **Tired of shaking your mouse or trackpad just to find the pointer?**
 
