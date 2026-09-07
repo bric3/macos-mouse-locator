@@ -1,10 +1,13 @@
 import AppKit
+import Combine
 import MouseLocatorCore
 import ServiceManagement
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
   private var overlayController: OverlayController?
+  private var statusItem: NSStatusItem?
+  private var visibilityObserver: AnyCancellable?
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     if CommandLine.arguments.contains("--unregister-login") {
@@ -18,6 +21,57 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     overlayController = OverlayController()
     overlayController?.start()
+    visibilityObserver = LocatorSettings.shared.$menuBarIconEnabled
+      .removeDuplicates()
+      .sink { [weak self] enabled in
+        Task { @MainActor in
+          self?.setStatusItemVisible(enabled)
+        }
+      }
+  }
+
+  private func setStatusItemVisible(_ visible: Bool) {
+    if !visible {
+      if let statusItem { NSStatusBar.system.removeStatusItem(statusItem) }
+      statusItem = nil
+      return
+    }
+    guard statusItem == nil else { return }
+
+    let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+    item.button?.image = locatorMenuBarImage
+    item.button?.toolTip = "Mouse Locator"
+
+    let menu = NSMenu()
+    menu.delegate = self
+    menu.addItem(withTitle: "Mouse Tail", action: #selector(toggleTail), keyEquivalent: "")
+    menu.addItem(withTitle: "Idle Pulse", action: #selector(toggleSonar), keyEquivalent: "")
+    menu.addItem(.separator())
+    menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
+    menu.addItem(.separator())
+    menu.addItem(withTitle: "Quit Mouse Locator", action: #selector(quit), keyEquivalent: "q")
+    menu.items.forEach { $0.target = self }
+    item.menu = menu
+    statusItem = item
+  }
+
+  @objc private func toggleTail() {
+    LocatorSettings.shared.tailEnabled.toggle()
+  }
+
+  @objc private func toggleSonar() {
+    LocatorSettings.shared.sonarEnabled.toggle()
+  }
+
+  @objc private func openSettings() {
+    NSWorkspace.shared.open(
+      FileManager.default.homeDirectoryForCurrentUser
+        .appending(path: "Library/PreferencePanes/MouseLocator.prefPane")
+    )
+  }
+
+  @objc private func quit() {
+    NSApp.terminate(nil)
   }
 
   private func setLaunchAtLogin(_ enabled: Bool) {
@@ -40,6 +94,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     if enabled, service.status == .requiresApproval {
       SMAppService.openSystemSettingsLoginItems()
     }
+  }
+}
+
+extension AppDelegate: NSMenuDelegate {
+  func menuWillOpen(_ menu: NSMenu) {
+    menu.items[0].state = LocatorSettings.shared.tailEnabled ? .on : .off
+    menu.items[1].state = LocatorSettings.shared.sonarEnabled ? .on : .off
   }
 }
 
