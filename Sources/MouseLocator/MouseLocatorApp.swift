@@ -7,7 +7,7 @@ struct MouseLocatorApp: App {
   @StateObject private var settings = LocatorSettings.shared
 
   var body: some Scene {
-    MenuBarExtra {
+    MenuBarExtra(isInserted: $settings.menuBarIconEnabled) {
       Toggle("Mouse Tail", isOn: $settings.tailEnabled)
       Toggle("Idle Pulse", isOn: $settings.sonarEnabled)
 

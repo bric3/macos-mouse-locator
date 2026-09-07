@@ -5,8 +5,10 @@ import SwiftUI
 @MainActor
 final class LocatorSettings: NSObject, ObservableObject {
   static let shared = LocatorSettings()
-  private static let changedNotification = Notification.Name("dev.brice.MouseLocator.settingsChanged")
+  private static let changedNotification = Notification.Name(
+    "dev.brice.MouseLocator.settingsChanged")
 
+  @Published var menuBarIconEnabled: Bool { didSet { save() } }
   @Published var sonarDelay: Double { didSet { save() } }
   @Published var sonarEnabled: Bool { didSet { save() } }
   @Published var sonarColor: String { didSet { save() } }
@@ -58,6 +60,7 @@ final class LocatorSettings: NSObject, ObservableObject {
       shouldSave = true
     }
 
+    menuBarIconEnabled = stored.menuBarIconEnabled ?? true
     sonarDelay = stored.sonarDelay
     sonarEnabled = stored.sonarEnabled
     sonarColor = stored.sonarColor ?? "accent"
@@ -93,6 +96,7 @@ final class LocatorSettings: NSObject, ObservableObject {
       encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
       try encoder.encode(
         StoredSettings(
+          menuBarIconEnabled: menuBarIconEnabled,
           sonarDelay: sonarDelay,
           sonarEnabled: sonarEnabled,
           sonarColor: sonarColor,
@@ -128,6 +132,7 @@ final class LocatorSettings: NSObject, ObservableObject {
         from: Data(contentsOf: configurationURL)
       )
       isReady = false
+      menuBarIconEnabled = stored.menuBarIconEnabled ?? true
       sonarDelay = stored.sonarDelay
       sonarEnabled = stored.sonarEnabled
       sonarColor = stored.sonarColor ?? "accent"
@@ -150,6 +155,7 @@ final class LocatorSettings: NSObject, ObservableObject {
 }
 
 private struct StoredSettings: Codable {
+  var menuBarIconEnabled: Bool?
   var sonarDelay = 3.0
   var sonarEnabled = true
   var sonarColor: String?
@@ -167,6 +173,7 @@ private struct StoredSettings: Codable {
   init() {}
 
   init(
+    menuBarIconEnabled: Bool,
     sonarDelay: Double,
     sonarEnabled: Bool,
     sonarColor: String,
@@ -181,6 +188,7 @@ private struct StoredSettings: Codable {
     tailSmoothing: String,
     tailThickness: Double
   ) {
+    self.menuBarIconEnabled = menuBarIconEnabled
     self.sonarDelay = sonarDelay
     self.sonarEnabled = sonarEnabled
     self.sonarColor = sonarColor
@@ -197,7 +205,8 @@ private struct StoredSettings: Codable {
   }
 
   var needsUpgrade: Bool {
-    sonarColor == nil || sonarRainbow == nil || tailColor == nil || tailDotsEnabled == nil
+    menuBarIconEnabled == nil || sonarColor == nil || sonarRainbow == nil || tailColor == nil
+      || tailDotsEnabled == nil
       || tailGap == nil || tailRainbow == nil || tailSmoothing == nil
   }
 
@@ -289,6 +298,10 @@ struct SettingsView: View {
           }
         }
         .disabled(!settings.sonarEnabled)
+      }
+
+      Section("Menu Bar") {
+        Toggle("Show Mouse Locator in the menu bar", isOn: $settings.menuBarIconEnabled)
       }
 
       Section("Storage") {
