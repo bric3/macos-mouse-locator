@@ -1,0 +1,39 @@
+# Copyright 2026 Brice Dutheil
+# SPDX-License-Identifier: MPL-2.0
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install LicenseOps
+        env:
+          LOPS_SHA256: 4d8e2a365e56029794a1886b8d2d76a8ee7e034912ff7efeffe4bf29c4893189
+        run: |
+          curl --fail --location --show-error \
+            --output "$RUNNER_TEMP/licenseops.tar.gz" \
+            https://github.com/licenseops/licenseops/releases/download/v0.2.0/licenseops_darwin_arm64.tar.gz
+          echo "$LOPS_SHA256  $RUNNER_TEMP/licenseops.tar.gz" | shasum -a 256 --check
+          tar -xzf "$RUNNER_TEMP/licenseops.tar.gz" -C "$RUNNER_TEMP"
+
+      - name: Build and check
+        run: make test app prefpane license-check LOPS="$RUNNER_TEMP/lops"
