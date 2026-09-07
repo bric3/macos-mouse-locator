@@ -7,6 +7,7 @@ let package = Package(
   platforms: [.macOS(.v14)],
   products: [
     .executable(name: "MouseLocator", targets: ["MouseLocator"]),
+    .executable(name: "MouseLocatorCapture", targets: ["MouseLocatorCapture"]),
     .executable(name: "MouseLocatorCheck", targets: ["MouseLocatorCheck"]),
   ],
   targets: [
@@ -18,6 +19,7 @@ let package = Package(
     .executableTarget(
       name: "MouseLocatorCheck",
       dependencies: ["MouseLocatorCore"]
-    )
+    ),
+    .executableTarget(name: "MouseLocatorCapture"),
   ]
 )

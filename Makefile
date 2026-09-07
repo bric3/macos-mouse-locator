@@ -38,7 +38,8 @@ prefpane: release
 	codesign --force --sign - $(PREFPANE_BUNDLE)
 
 screenshots: app
-	jbang scripts/CaptureShowcases.java
+	.build/release/MouseLocatorCapture --check-permissions
+	.build/release/MouseLocatorCapture
 
 install: app prefpane
 	mkdir -p "$(INSTALL_DIR)"
