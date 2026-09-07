@@ -243,17 +243,6 @@ struct SettingsView: View {
         Toggle(L10n.text("Show Mouse Locator in the menu bar"), isOn: $settings.menuBarIconEnabled)
       }
 
-      Section(L10n.text("Storage")) {
-        Text(settings.configurationURL.path(percentEncoded: false))
-          .font(.caption)
-          .textSelection(.enabled)
-        if let storageError = settings.storageError {
-          Text(storageError)
-            .font(.caption)
-            .foregroundStyle(.red)
-        }
-      }
-
       Section(L10n.text("Mouse Tail")) {
         Toggle(L10n.text("Show a fading trail behind the pointer"), isOn: $settings.tailEnabled)
 
@@ -330,6 +319,32 @@ struct SettingsView: View {
           }
         }
         .disabled(!settings.sonarEnabled)
+      }
+
+      Section(L10n.text("Storage")) {
+        HStack {
+          Text(settings.configurationURL.path(percentEncoded: false))
+            .font(.caption)
+            .lineLimit(1)
+            .truncationMode(.middle)
+            .textSelection(.enabled)
+          Spacer(minLength: 8)
+          Button {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(
+              settings.configurationURL.path(percentEncoded: false),
+              forType: .string
+            )
+          } label: {
+            Label(L10n.text("Copy"), systemImage: "doc.on.doc")
+          }
+          .buttonStyle(.bordered)
+        }
+        if let storageError = settings.storageError {
+          Text(storageError)
+            .font(.caption)
+            .foregroundStyle(.red)
+        }
       }
 
     }
