@@ -21,7 +21,8 @@ struct MouseLocatorApp: App {
         NSApplication.shared.terminate(nil)
       }
     } label: {
-      LocatorMenuBarIcon()
+      Image(nsImage: locatorMenuBarImage)
+        .accessibilityLabel("Mouse Locator")
     }
 
     Settings {
@@ -31,23 +32,34 @@ struct MouseLocatorApp: App {
   }
 }
 
-private struct LocatorMenuBarIcon: View {
-  var body: some View {
-    ZStack {
-      Circle()
-        .stroke(lineWidth: 1.25)
-        .frame(width: 16, height: 16)
-        .opacity(0.55)
-      Circle()
-        .stroke(lineWidth: 1.25)
-        .frame(width: 10, height: 10)
-        .opacity(0.8)
-      Image(systemName: "cursorarrow")
-        .font(.system(size: 10, weight: .semibold))
-        .offset(x: -1.5, y: 1.5)
+@MainActor
+private let locatorMenuBarImage: NSImage = {
+  let image = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { _ in
+    NSColor.black.setStroke()
+    for circle in [
+      NSRect(x: 1, y: 1, width: 16, height: 16),
+      NSRect(x: 4, y: 4, width: 10, height: 10),
+    ] {
+      let path = NSBezierPath(ovalIn: circle)
+      path.lineWidth = 1.25
+      path.stroke()
     }
-    .frame(width: 18, height: 18)
-    .foregroundStyle(.primary)
-    .accessibilityLabel("Mouse Locator")
+
+    let cursor = NSBezierPath()
+    cursor.move(to: NSPoint(x: 4, y: 16))
+    cursor.line(to: NSPoint(x: 14, y: 6))
+    cursor.line(to: NSPoint(x: 10, y: 6))
+    cursor.line(to: NSPoint(x: 7.5, y: 2))
+    cursor.close()
+    NSGraphicsContext.current?.compositingOperation = .clear
+    cursor.lineWidth = 2.5
+    cursor.stroke()
+    cursor.fill()
+    NSGraphicsContext.current?.compositingOperation = .sourceOver
+    NSColor.black.setFill()
+    cursor.fill()
+    return true
   }
-}
+  image.isTemplate = true
+  return image
+}()
