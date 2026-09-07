@@ -71,6 +71,8 @@ JSON preferences are imported automatically on first launch and retained as a ba
 
 Settings intended for manual editing only:
 
+- `modifierTapDuration`: maximum duration in seconds for a modifier-only tap;
+  defaults to `0.35`.
 - `tailDotsEnabled`: defaults to `false`; set it to `true` to restore rounded
   sample-point caps.
 - `tailSmoothing`: defaults to `"bezier"`; set it to `"none"` for straight

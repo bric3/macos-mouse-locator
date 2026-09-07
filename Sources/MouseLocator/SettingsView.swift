@@ -26,6 +26,9 @@ final class LocatorSettings: NSObject, ObservableObject {
     "dev.brice.MouseLocator.settingsChanged")
 
   @Published var menuBarIconEnabled: Bool { didSet { saveNow() } }
+  @Published var modifierPulseEnabled: Bool { didSet { saveNow() } }
+  @Published var modifierPulseKey: String { didSet { saveNow() } }
+  @Published var modifierTapDuration: Double { didSet { saveNow() } }
   @Published var sonarDelay: Double { didSet { scheduleSave() } }
   @Published var sonarEnabled: Bool { didSet { saveNow() } }
   @Published var sonarColor: String { didSet { scheduleSave() } }
@@ -97,6 +100,9 @@ final class LocatorSettings: NSObject, ObservableObject {
     }
 
     menuBarIconEnabled = stored.menuBarIconEnabled ?? true
+    modifierPulseEnabled = stored.modifierPulseEnabled ?? false
+    modifierPulseKey = stored.resolvedModifierPulseKey
+    modifierTapDuration = stored.modifierTapDuration ?? 0.35
     sonarDelay = stored.sonarDelay
     sonarEnabled = stored.sonarEnabled
     sonarColor = stored.sonarColor ?? "accent"
@@ -150,24 +156,27 @@ final class LocatorSettings: NSObject, ObservableObject {
         withIntermediateDirectories: true
       )
       try StoredSettings(
-          menuBarIconEnabled: menuBarIconEnabled,
-          sonarDelay: sonarDelay,
-          sonarEnabled: sonarEnabled,
-          sonarColor: sonarColor,
-          sonarExpansionSpeed: sonarExpansionSpeed,
-          sonarRainbow: sonarRainbow,
-          sonarSize: sonarSize,
-          sonarThickness: sonarThickness,
-          tailColor: tailColor,
-          tailActivationMode: tailActivationMode,
-          tailDotsEnabled: tailDotsEnabled,
-          tailEnabled: tailEnabled,
-          tailGap: tailGap,
-          tailInactivityDelay: tailInactivityDelay,
-          tailRainbow: tailRainbow,
-          tailSmoothing: tailSmoothing,
-          tailThickness: tailThickness
-        ).toml.write(to: configurationURL, atomically: true, encoding: .utf8)
+        menuBarIconEnabled: menuBarIconEnabled,
+        modifierPulseEnabled: modifierPulseEnabled,
+        modifierPulseKey: modifierPulseKey,
+        modifierTapDuration: modifierTapDuration,
+        sonarDelay: sonarDelay,
+        sonarEnabled: sonarEnabled,
+        sonarColor: sonarColor,
+        sonarExpansionSpeed: sonarExpansionSpeed,
+        sonarRainbow: sonarRainbow,
+        sonarSize: sonarSize,
+        sonarThickness: sonarThickness,
+        tailColor: tailColor,
+        tailActivationMode: tailActivationMode,
+        tailDotsEnabled: tailDotsEnabled,
+        tailEnabled: tailEnabled,
+        tailGap: tailGap,
+        tailInactivityDelay: tailInactivityDelay,
+        tailRainbow: tailRainbow,
+        tailSmoothing: tailSmoothing,
+        tailThickness: tailThickness
+      ).toml.write(to: configurationURL, atomically: true, encoding: .utf8)
       storageError = nil
       DistributedNotificationCenter.default().postNotificationName(
         Self.changedNotification,
@@ -190,6 +199,9 @@ final class LocatorSettings: NSObject, ObservableObject {
       )
       isReady = false
       menuBarIconEnabled = stored.menuBarIconEnabled ?? true
+      modifierPulseEnabled = stored.modifierPulseEnabled ?? false
+      modifierPulseKey = stored.resolvedModifierPulseKey
+      modifierTapDuration = stored.modifierTapDuration ?? 0.35
       sonarDelay = stored.sonarDelay
       sonarEnabled = stored.sonarEnabled
       sonarColor = stored.sonarColor ?? "accent"
@@ -217,6 +229,9 @@ final class LocatorSettings: NSObject, ObservableObject {
 
 private struct StoredSettings: Codable {
   var menuBarIconEnabled: Bool?
+  var modifierPulseEnabled: Bool?
+  var modifierPulseKey: String?
+  var modifierTapDuration: Double?
   var sonarDelay = 3.0
   var sonarEnabled = true
   var sonarColor: String?
@@ -238,6 +253,9 @@ private struct StoredSettings: Codable {
 
   init(
     menuBarIconEnabled: Bool,
+    modifierPulseEnabled: Bool,
+    modifierPulseKey: String,
+    modifierTapDuration: Double,
     sonarDelay: Double,
     sonarEnabled: Bool,
     sonarColor: String,
@@ -256,6 +274,9 @@ private struct StoredSettings: Codable {
     tailThickness: Double
   ) {
     self.menuBarIconEnabled = menuBarIconEnabled
+    self.modifierPulseEnabled = modifierPulseEnabled
+    self.modifierPulseKey = modifierPulseKey
+    self.modifierTapDuration = modifierTapDuration
     self.sonarDelay = sonarDelay
     self.sonarEnabled = sonarEnabled
     self.sonarColor = sonarColor
@@ -275,10 +296,19 @@ private struct StoredSettings: Codable {
   }
 
   var needsUpgrade: Bool {
-    menuBarIconEnabled == nil || sonarColor == nil || sonarExpansionSpeed == nil
+    menuBarIconEnabled == nil || modifierPulseEnabled == nil || modifierPulseKey == nil
+      || modifierTapDuration == nil || sonarColor == nil || sonarExpansionSpeed == nil
       || sonarRainbow == nil || tailColor == nil || tailActivationMode == nil
       || tailDotsEnabled == nil || tailGap == nil || tailInactivityDelay == nil
       || tailRainbow == nil || tailSmoothing == nil
+  }
+
+  var resolvedModifierPulseKey: String {
+    switch modifierPulseKey {
+    case "option": "option"
+    case "command": "command"
+    default: "control"
+    }
   }
 
   init(legacy: [String: Any]) {
@@ -293,6 +323,9 @@ private struct StoredSettings: Codable {
   init(toml source: String) throws {
     let toml = try FlatTOML(source)
     menuBarIconEnabled = try toml.bool("menuBarIconEnabled")
+    modifierPulseEnabled = try toml.bool("modifierPulseEnabled")
+    modifierPulseKey = try toml.string("modifierPulseKey")
+    modifierTapDuration = try toml.double("modifierTapDuration")
     sonarDelay = try toml.double("sonarDelay") ?? sonarDelay
     sonarEnabled = try toml.bool("sonarEnabled") ?? sonarEnabled
     sonarColor = try toml.string("sonarColor")
@@ -317,9 +350,13 @@ private struct StoredSettings: Codable {
         header: [
           "Mouse Locator settings",
           "Key names are not stable yet and may change before the first stable release.",
+          "modifierTapDuration is the maximum modifier-only tap length in seconds.",
         ],
         fields: [
           ("menuBarIconEnabled", String(menuBarIconEnabled ?? true)),
+          ("modifierPulseEnabled", String(modifierPulseEnabled ?? false)),
+          ("modifierPulseKey", FlatTOML.quoted(modifierPulseKey ?? "control")),
+          ("modifierTapDuration", String(modifierTapDuration ?? 0.35)),
           ("tailEnabled", String(tailEnabled)),
           ("tailActivationMode", FlatTOML.quoted(tailActivationMode ?? "always")),
           ("tailInactivityDelay", String(tailInactivityDelay ?? 3)),
@@ -406,11 +443,30 @@ struct SettingsView: View {
           isOn: $settings.sonarEnabled
         )
 
+        Toggle(L10n.text("Pulse on modifier key tap"), isOn: $settings.modifierPulseEnabled)
+
+        Picker(L10n.text("Modifier key"), selection: $settings.modifierPulseKey) {
+          Text(L10n.text("Control")).tag("control")
+          Text(L10n.text("Option")).tag("option")
+          Text(L10n.text("Command")).tag("command")
+        }
+        .disabled(!settings.modifierPulseEnabled)
+
+        if settings.modifierPulseEnabled {
+          Text(
+            L10n.text(
+              "Requires access in Privacy & Security > Accessibility. Restart Mouse Locator after granting access."
+            )
+          )
+          .font(.caption)
+          .foregroundStyle(.secondary)
+        }
+
         ColorPicker(L10n.text("Circle color"), selection: sonarColor, supportsOpacity: false)
-          .disabled(!settings.sonarEnabled || settings.sonarRainbow)
+          .disabled(!pulseEnabled || settings.sonarRainbow)
 
         Toggle(L10n.text("Rainbow colors"), isOn: $settings.sonarRainbow)
-          .disabled(!settings.sonarEnabled)
+          .disabled(!pulseEnabled)
 
         LabeledContent(L10n.text("Inactivity delay")) {
           HStack {
@@ -432,7 +488,7 @@ struct SettingsView: View {
               .frame(width: 44, alignment: .trailing)
           }
         }
-        .disabled(!settings.sonarEnabled)
+        .disabled(!pulseEnabled)
 
         LabeledContent(L10n.text("Circle thickness")) {
           HStack {
@@ -443,7 +499,7 @@ struct SettingsView: View {
               .frame(width: 44, alignment: .trailing)
           }
         }
-        .disabled(!settings.sonarEnabled)
+        .disabled(!pulseEnabled)
 
         LabeledContent(L10n.text("Maximum size")) {
           HStack {
@@ -454,7 +510,7 @@ struct SettingsView: View {
               .frame(width: 52, alignment: .trailing)
           }
         }
-        .disabled(!settings.sonarEnabled)
+        .disabled(!pulseEnabled)
       }
 
       Section(L10n.text("Storage")) {
@@ -499,6 +555,10 @@ struct SettingsView: View {
       get: { Color(nsColor: .locatorColor(settings.sonarColor)) },
       set: { settings.sonarColor = NSColor($0).locatorHexRGB }
     )
+  }
+
+  private var pulseEnabled: Bool {
+    settings.sonarEnabled || settings.modifierPulseEnabled
   }
 }
 

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import AppKit
+@preconcurrency import ApplicationServices
 import Combine
 import MouseLocatorCore
 import ServiceManagement
@@ -122,6 +123,9 @@ private final class OverlayController: NSObject {
   private static let frameInterval: TimeInterval = 0.02
 
   private var eventMonitors: [Any] = []
+  private var modifierEventMonitors: [Any] = []
+  private var modifierPulseObserver: AnyCancellable?
+  private var modifierTapDetector = ModifierTapDetector()
   private var panels: [NSPanel] = []
   private var points: [TrailPoint] = []
   private var timer: Timer?
@@ -164,6 +168,14 @@ private final class OverlayController: NSObject {
     ) {
       eventMonitors.append(monitor)
     }
+
+    modifierPulseObserver = LocatorSettings.shared.$modifierPulseEnabled
+      .removeDuplicates()
+      .sink { [weak self] enabled in
+        Task { @MainActor in
+          self?.setModifierPulseMonitoring(enabled)
+        }
+      }
   }
 
   func stop() {
@@ -171,9 +183,84 @@ private final class OverlayController: NSObject {
     timer = nil
     eventMonitors.forEach(NSEvent.removeMonitor)
     eventMonitors.removeAll()
+    modifierEventMonitors.forEach(NSEvent.removeMonitor)
+    modifierEventMonitors.removeAll()
+    modifierPulseObserver?.cancel()
+    modifierPulseObserver = nil
     NotificationCenter.default.removeObserver(self)
     panels.forEach { $0.close() }
     panels.removeAll()
+  }
+
+  private func setModifierPulseMonitoring(_ enabled: Bool) {
+    modifierEventMonitors.forEach(NSEvent.removeMonitor)
+    modifierEventMonitors.removeAll()
+    modifierTapDetector.reset()
+    guard enabled else { return }
+
+    let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+    guard AXIsProcessTrustedWithOptions([promptKey: true] as CFDictionary) else { return }
+
+    let events: NSEvent.EventTypeMask = [.flagsChanged, .keyDown]
+    if let monitor = NSEvent.addGlobalMonitorForEvents(
+      matching: events,
+      handler: { [weak self] event in
+        let isKeyDown = event.type == .keyDown
+        let flags = event.modifierFlags.rawValue
+        let timestamp = event.timestamp
+        Task { @MainActor in
+          self?.handleModifierEvent(
+            isKeyDown: isKeyDown,
+            flags: flags,
+            timestamp: timestamp
+          )
+        }
+      }
+    ) {
+      modifierEventMonitors.append(monitor)
+    }
+    if let monitor = NSEvent.addLocalMonitorForEvents(
+      matching: events,
+      handler: { [weak self] event in
+        let isKeyDown = event.type == .keyDown
+        let flags = event.modifierFlags.rawValue
+        let timestamp = event.timestamp
+        Task { @MainActor in
+          self?.handleModifierEvent(
+            isKeyDown: isKeyDown,
+            flags: flags,
+            timestamp: timestamp
+          )
+        }
+        return event
+      }
+    ) {
+      modifierEventMonitors.append(monitor)
+    }
+  }
+
+  private func handleModifierEvent(isKeyDown: Bool, flags: UInt, timestamp: TimeInterval) {
+    if isKeyDown {
+      modifierTapDetector.cancel()
+      return
+    }
+
+    let settings = LocatorSettings.shared
+    let selected: NSEvent.ModifierFlags = switch settings.modifierPulseKey {
+    case "option": .option
+    case "command": .command
+    default: .control
+    }
+    let active = NSEvent.ModifierFlags(rawValue: flags)
+      .intersection([.shift, .control, .option, .command, .function])
+    if modifierTapDetector.update(
+      isPressed: active.contains(selected),
+      isAlone: active == selected,
+      at: timestamp,
+      maximumDuration: settings.modifierTapDuration
+    ) {
+      startPulse(at: NSEvent.mouseLocation)
+    }
   }
 
   @objc private func rebuildPanels() {
@@ -210,8 +297,7 @@ private final class OverlayController: NSObject {
     lastPosition = position
     lastMovementTime = now
     if settings.sonarEnabled, idleDuration >= settings.sonarDelay {
-      sonarPosition = position
-      sonarStartTime = now
+      startPulse(at: position, now: now)
     } else if sonarStartTime != nil {
       sonarPosition = position
     }
@@ -238,6 +324,15 @@ private final class OverlayController: NSObject {
     startAnimationTimer()
   }
 
+  private func startPulse(
+    at position: NSPoint,
+    now: TimeInterval = ProcessInfo.processInfo.systemUptime
+  ) {
+    sonarPosition = position
+    sonarStartTime = now
+    startAnimationTimer()
+  }
+
   private func startAnimationTimer() {
     guard timer == nil else { return }
     timer = Timer.scheduledTimer(withTimeInterval: Self.frameInterval, repeats: true) {
@@ -259,7 +354,7 @@ private final class OverlayController: NSObject {
       points.removeAll()
     }
 
-    if !settings.sonarEnabled {
+    if !settings.sonarEnabled, !settings.modifierPulseEnabled {
       sonarPosition = nil
       sonarStartTime = nil
     }
