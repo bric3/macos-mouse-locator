@@ -137,6 +137,7 @@ private final class OverlayController: NSObject {
         points: points,
         tailColor: .locatorColor(settings.tailColor),
         tailDotsEnabled: settings.tailDotsEnabled,
+        tailGap: settings.tailGap,
         tailLineWidth: settings.tailThickness,
         tailRainbow: settings.tailRainbow,
         tailSmoothing: settings.tailSmoothing,
@@ -165,6 +166,7 @@ private struct OverlayFrame {
   let points: [TrailPoint]
   let tailColor: NSColor
   let tailDotsEnabled: Bool
+  let tailGap: CGFloat
   let tailLineWidth: CGFloat
   let tailRainbow: Bool
   let tailSmoothing: String
@@ -186,6 +188,7 @@ private final class OverlayView: NSView {
     points: [],
     tailColor: .controlAccentColor,
     tailDotsEnabled: false,
+    tailGap: 16,
     tailLineWidth: 3,
     tailRainbow: false,
     tailSmoothing: "bezier",
@@ -204,6 +207,21 @@ private final class OverlayView: NSView {
     guard let origin = window?.frame.origin else { return }
 
     if frameState.points.count > 1 {
+      NSGraphicsContext.saveGraphicsState()
+      if frameState.tailGap > 0, let cursor = frameState.points.last?.position {
+        let radius = frameState.tailGap + frameState.tailLineWidth / 2
+        let clipPath = NSBezierPath(rect: bounds)
+        clipPath.appendOval(
+          in: NSRect(
+            x: cursor.x - origin.x - radius,
+            y: cursor.y - origin.y - radius,
+            width: radius * 2,
+            height: radius * 2
+          )
+        )
+        clipPath.windingRule = .evenOdd
+        clipPath.addClip()
+      }
       let totalDistance = zip(frameState.points, frameState.points.dropFirst()).reduce(0) {
         $0 + $1.0.position.distance(to: $1.1.position)
       }
@@ -263,6 +281,7 @@ private final class OverlayView: NSView {
           path.stroke()
         }
       }
+      NSGraphicsContext.restoreGraphicsState()
     }
 
     if let position = frameState.sonarPosition, let progress = frameState.sonarProgress {
