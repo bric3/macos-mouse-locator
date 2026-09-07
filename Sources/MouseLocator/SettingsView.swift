@@ -416,6 +416,7 @@ private struct StoredSettings: Codable {
 
 struct SettingsView: View {
   @ObservedObject var settings: LocatorSettings
+  @State private var showingInputMonitoringHelp = false
 
   var body: some View {
     Form {
@@ -478,7 +479,51 @@ struct SettingsView: View {
           isOn: $settings.sonarEnabled
         )
 
-        Toggle(L10n.text("Pulse on modifier key"), isOn: $settings.modifierPulseEnabled)
+        LabeledContent {
+          Toggle(
+            L10n.text("Pulse on modifier key"),
+            isOn: $settings.modifierPulseEnabled
+          )
+          .labelsHidden()
+        } label: {
+          HStack(spacing: 6) {
+            Text(L10n.text("Pulse on modifier key"))
+            Button {
+              showingInputMonitoringHelp.toggle()
+            } label: {
+              Image(systemName: "info.circle")
+            }
+            .buttonStyle(.plain)
+            .help(L10n.text("About modifier-key permission"))
+            .popover(isPresented: $showingInputMonitoringHelp) {
+              VStack(alignment: .leading, spacing: 8) {
+                Text(L10n.text("Modifier-key permission"))
+                  .font(.headline)
+                Text(
+                  L10n.text(
+                    "Input Monitoring is required only for detecting modifier keys outside Mouse Locator."
+                  )
+                )
+                Text(
+                  L10n.text(
+                    "Open Input Monitoring Settings, add Mouse Locator with the + button if needed, then turn it on."
+                  )
+                )
+                Text(
+                  L10n.text(
+                    "Return to this pane; the status should change to granted automatically."
+                  )
+                )
+                Text(
+                  L10n.text("Accessibility is not required by this version and can be disabled.")
+                )
+                .foregroundStyle(.secondary)
+              }
+              .padding()
+              .frame(width: 340)
+            }
+          }
+        }
 
         Picker(L10n.text("Modifier key"), selection: $settings.modifierPulseKey) {
           Text(L10n.text("Control")).tag("control")

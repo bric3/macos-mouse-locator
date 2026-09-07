@@ -26,6 +26,12 @@
 
 "Pulse when the pointer moves after being idle" = "Pulse when the pointer moves after being idle";
 "Pulse on modifier key" = "Pulse on modifier key";
+"About modifier-key permission" = "About modifier-key permission";
+"Modifier-key permission" = "Modifier-key permission";
+"Input Monitoring is required only for detecting modifier keys outside Mouse Locator." = "Input Monitoring is required only for detecting modifier keys outside Mouse Locator.";
+"Open Input Monitoring Settings, add Mouse Locator with the + button if needed, then turn it on." = "Open Input Monitoring Settings, add Mouse Locator with the + button if needed, then turn it on.";
+"Return to this pane; the status should change to granted automatically." = "Return to this pane; the status should change to granted automatically.";
+"Accessibility is not required by this version and can be disabled." = "Accessibility is not required by this version and can be disabled.";
 "Modifier key" = "Modifier key";
 "Control" = "Control";
 "Option" = "Option";
