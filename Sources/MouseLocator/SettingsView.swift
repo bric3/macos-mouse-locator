@@ -22,25 +22,26 @@ final class LocatorSettings: NSObject, ObservableObject {
   private static let changedNotification = Notification.Name(
     "dev.brice.MouseLocator.settingsChanged")
 
-  @Published var menuBarIconEnabled: Bool { didSet { save() } }
-  @Published var sonarDelay: Double { didSet { save() } }
-  @Published var sonarEnabled: Bool { didSet { save() } }
-  @Published var sonarColor: String { didSet { save() } }
-  @Published var sonarRainbow: Bool { didSet { save() } }
-  @Published var sonarSize: Double { didSet { save() } }
-  @Published var sonarThickness: Double { didSet { save() } }
-  @Published var tailColor: String { didSet { save() } }
-  @Published var tailDotsEnabled: Bool { didSet { save() } }
-  @Published var tailEnabled: Bool { didSet { save() } }
-  @Published var tailGap: Double { didSet { save() } }
-  @Published var tailRainbow: Bool { didSet { save() } }
-  @Published var tailSmoothing: String { didSet { save() } }
-  @Published var tailThickness: Double { didSet { save() } }
+  @Published var menuBarIconEnabled: Bool { didSet { saveNow() } }
+  @Published var sonarDelay: Double { didSet { scheduleSave() } }
+  @Published var sonarEnabled: Bool { didSet { saveNow() } }
+  @Published var sonarColor: String { didSet { scheduleSave() } }
+  @Published var sonarRainbow: Bool { didSet { saveNow() } }
+  @Published var sonarSize: Double { didSet { scheduleSave() } }
+  @Published var sonarThickness: Double { didSet { scheduleSave() } }
+  @Published var tailColor: String { didSet { scheduleSave() } }
+  @Published var tailDotsEnabled: Bool { didSet { saveNow() } }
+  @Published var tailEnabled: Bool { didSet { saveNow() } }
+  @Published var tailGap: Double { didSet { scheduleSave() } }
+  @Published var tailRainbow: Bool { didSet { saveNow() } }
+  @Published var tailSmoothing: String { didSet { saveNow() } }
+  @Published var tailThickness: Double { didSet { scheduleSave() } }
   @Published private(set) var storageError: String?
 
   let configurationURL: URL
 
   private var isReady = false
+  private var pendingSave: Task<Void, Never>?
   private let notificationSender = String(ProcessInfo.processInfo.processIdentifier)
 
   override private init() {
@@ -90,7 +91,7 @@ final class LocatorSettings: NSObject, ObservableObject {
     tailThickness = stored.tailThickness
     super.init()
     isReady = true
-    if shouldSave { save() }
+    if shouldSave { saveNow() }
     DistributedNotificationCenter.default().addObserver(
       self,
       selector: #selector(reloadSettings(_:)),
@@ -99,7 +100,24 @@ final class LocatorSettings: NSObject, ObservableObject {
     )
   }
 
-  private func save() {
+  private func scheduleSave() {
+    guard isReady else { return }
+    pendingSave?.cancel()
+    pendingSave = Task { [weak self] in
+      try? await Task.sleep(for: .milliseconds(150))
+      guard !Task.isCancelled else { return }
+      self?.saveNow()
+    }
+  }
+
+  func flush() {
+    guard pendingSave != nil else { return }
+    saveNow()
+  }
+
+  private func saveNow() {
+    pendingSave?.cancel()
+    pendingSave = nil
     guard isReady else { return }
     do {
       try FileManager.default.createDirectory(
@@ -140,6 +158,8 @@ final class LocatorSettings: NSObject, ObservableObject {
 
   @objc private func reloadSettings(_ notification: Notification) {
     guard notification.object as? String != notificationSender else { return }
+    pendingSave?.cancel()
+    pendingSave = nil
     do {
       let stored = try JSONDecoder().decode(
         StoredSettings.self,

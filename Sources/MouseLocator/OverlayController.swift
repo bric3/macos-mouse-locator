@@ -30,6 +30,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       }
   }
 
+  func applicationWillTerminate(_ notification: Notification) {
+    LocatorSettings.shared.flush()
+  }
+
   private func setStatusItemVisible(_ visible: Bool) {
     if !visible {
       if let statusItem { NSStatusBar.system.removeStatusItem(statusItem) }
