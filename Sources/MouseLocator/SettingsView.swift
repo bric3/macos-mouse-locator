@@ -2,6 +2,20 @@ import AppKit
 import MouseLocatorCore
 import SwiftUI
 
+private final class LocalizationToken: NSObject {}
+
+enum L10n {
+  private static let bundle = Bundle(for: LocalizationToken.self)
+
+  static func text(_ key: String) -> String {
+    bundle.localizedString(forKey: key, value: key, table: nil)
+  }
+
+  static func format(_ key: String, _ arguments: CVarArg...) -> String {
+    String(format: text(key), locale: .current, arguments: arguments)
+  }
+}
+
 @MainActor
 final class LocatorSettings: NSObject, ObservableObject {
   static let shared = LocatorSettings()
@@ -51,7 +65,7 @@ final class LocatorSettings: NSObject, ObservableObject {
         shouldSave = stored.needsUpgrade
       } catch {
         stored = StoredSettings()
-        storageError = "Could not read settings: \(error.localizedDescription)"
+        storageError = L10n.format("Could not read settings: %@", error.localizedDescription)
       }
     } else {
       stored = StoredSettings(
@@ -120,7 +134,7 @@ final class LocatorSettings: NSObject, ObservableObject {
         deliverImmediately: true
       )
     } catch {
-      storageError = "Could not save settings: \(error.localizedDescription)"
+      storageError = L10n.format("Could not save settings: %@", error.localizedDescription)
     }
   }
 
@@ -149,7 +163,7 @@ final class LocatorSettings: NSObject, ObservableObject {
       isReady = true
       storageError = nil
     } catch {
-      storageError = "Could not reload settings: \(error.localizedDescription)"
+      storageError = L10n.format("Could not reload settings: %@", error.localizedDescription)
     }
   }
 }
@@ -225,11 +239,11 @@ struct SettingsView: View {
 
   var body: some View {
     Form {
-      Section("Menu Bar") {
-        Toggle("Show Mouse Locator in the menu bar", isOn: $settings.menuBarIconEnabled)
+      Section(L10n.text("Menu Bar")) {
+        Toggle(L10n.text("Show Mouse Locator in the menu bar"), isOn: $settings.menuBarIconEnabled)
       }
 
-      Section("Storage") {
+      Section(L10n.text("Storage")) {
         Text(settings.configurationURL.path(percentEncoded: false))
           .font(.caption)
           .textSelection(.enabled)
@@ -240,31 +254,31 @@ struct SettingsView: View {
         }
       }
 
-      Section("Mouse Tail") {
-        Toggle("Show a fading trail behind the pointer", isOn: $settings.tailEnabled)
+      Section(L10n.text("Mouse Tail")) {
+        Toggle(L10n.text("Show a fading trail behind the pointer"), isOn: $settings.tailEnabled)
 
-        ColorPicker("Trail color", selection: tailColor, supportsOpacity: false)
+        ColorPicker(L10n.text("Trail color"), selection: tailColor, supportsOpacity: false)
           .disabled(!settings.tailEnabled || settings.tailRainbow)
 
-        Toggle("Rainbow colors", isOn: $settings.tailRainbow)
+        Toggle(L10n.text("Rainbow colors"), isOn: $settings.tailRainbow)
           .disabled(!settings.tailEnabled)
 
-        LabeledContent("Trail thickness") {
+        LabeledContent(L10n.text("Trail thickness")) {
           HStack {
             Slider(value: $settings.tailThickness, in: 2...20, step: 1)
               .frame(width: 180)
-            Text("\(Int(settings.tailThickness)) pt")
+            Text(L10n.format("%d pt", Int(settings.tailThickness)))
               .monospacedDigit()
               .frame(width: 44, alignment: .trailing)
           }
         }
         .disabled(!settings.tailEnabled)
 
-        LabeledContent("Cursor gap") {
+        LabeledContent(L10n.text("Cursor gap")) {
           HStack {
             Slider(value: $settings.tailGap, in: 0...80, step: 2)
               .frame(width: 180)
-            Text("\(Int(settings.tailGap)) pt")
+            Text(L10n.format("%d pt", Int(settings.tailGap)))
               .monospacedDigit()
               .frame(width: 44, alignment: .trailing)
           }
@@ -272,42 +286,45 @@ struct SettingsView: View {
         .disabled(!settings.tailEnabled)
       }
 
-      Section("Idle Pulse") {
-        Toggle("Pulse when the pointer moves after being idle", isOn: $settings.sonarEnabled)
+      Section(L10n.text("Idle Pulse")) {
+        Toggle(
+          L10n.text("Pulse when the pointer moves after being idle"),
+          isOn: $settings.sonarEnabled
+        )
 
-        ColorPicker("Circle color", selection: sonarColor, supportsOpacity: false)
+        ColorPicker(L10n.text("Circle color"), selection: sonarColor, supportsOpacity: false)
           .disabled(!settings.sonarEnabled || settings.sonarRainbow)
 
-        Toggle("Rainbow colors", isOn: $settings.sonarRainbow)
+        Toggle(L10n.text("Rainbow colors"), isOn: $settings.sonarRainbow)
           .disabled(!settings.sonarEnabled)
 
-        LabeledContent("Inactivity delay") {
+        LabeledContent(L10n.text("Inactivity delay")) {
           HStack {
             Slider(value: $settings.sonarDelay, in: 1...15, step: 0.5)
               .frame(width: 180)
-            Text("\(settings.sonarDelay, specifier: "%.1f") s")
+            Text(L10n.format("%.1f s", settings.sonarDelay))
               .monospacedDigit()
               .frame(width: 44, alignment: .trailing)
           }
         }
         .disabled(!settings.sonarEnabled)
 
-        LabeledContent("Circle thickness") {
+        LabeledContent(L10n.text("Circle thickness")) {
           HStack {
             Slider(value: $settings.sonarThickness, in: 2...20, step: 1)
               .frame(width: 180)
-            Text("\(Int(settings.sonarThickness)) pt")
+            Text(L10n.format("%d pt", Int(settings.sonarThickness)))
               .monospacedDigit()
               .frame(width: 44, alignment: .trailing)
           }
         }
         .disabled(!settings.sonarEnabled)
 
-        LabeledContent("Maximum size") {
+        LabeledContent(L10n.text("Maximum size")) {
           HStack {
             Slider(value: $settings.sonarSize, in: 80...300, step: 10)
               .frame(width: 180)
-            Text("\(Int(settings.sonarSize)) pt")
+            Text(L10n.format("%d pt", Int(settings.sonarSize)))
               .monospacedDigit()
               .frame(width: 52, alignment: .trailing)
           }

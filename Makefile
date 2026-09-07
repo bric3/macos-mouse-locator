@@ -18,9 +18,10 @@ release:
 	swift build -c release
 
 app: release
-	mkdir -p $(APP_BUNDLE)/Contents/MacOS
+	mkdir -p $(APP_BUNDLE)/Contents/MacOS $(APP_BUNDLE)/Contents/Resources
 	cp .build/release/MouseLocator $(APP_BUNDLE)/Contents/MacOS/MouseLocator
 	cp Resources/Info.plist $(APP_BUNDLE)/Contents/Info.plist
+	cp -R Resources/*.lproj $(APP_BUNDLE)/Contents/Resources/
 	codesign --force --sign - $(APP_BUNDLE)
 
 prefpane: release
@@ -35,6 +36,7 @@ prefpane: release
 		-o $(PREFPANE_BUNDLE)/Contents/MacOS/MouseLocatorPreferences
 	cp Resources/PreferencePane-Info.plist $(PREFPANE_BUNDLE)/Contents/Info.plist
 	cp Resources/MouseLocator.icns $(PREFPANE_BUNDLE)/Contents/Resources/MouseLocator.icns
+	cp -R Resources/*.lproj $(PREFPANE_BUNDLE)/Contents/Resources/
 	codesign --force --sign - $(PREFPANE_BUNDLE)
 
 screenshots: app

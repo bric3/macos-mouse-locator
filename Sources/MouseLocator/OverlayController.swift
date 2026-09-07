@@ -40,16 +40,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     item.button?.image = locatorMenuBarImage
-    item.button?.toolTip = "Mouse Locator"
+    item.button?.toolTip = L10n.text("Mouse Locator")
 
     let menu = NSMenu()
     menu.delegate = self
-    menu.addItem(withTitle: "Mouse Tail", action: #selector(toggleTail), keyEquivalent: "")
-    menu.addItem(withTitle: "Idle Pulse", action: #selector(toggleSonar), keyEquivalent: "")
+    menu.addItem(
+      withTitle: L10n.text("Mouse Tail"), action: #selector(toggleTail), keyEquivalent: "")
+    menu.addItem(
+      withTitle: L10n.text("Idle Pulse"), action: #selector(toggleSonar), keyEquivalent: "")
     menu.addItem(.separator())
-    menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
+    menu.addItem(
+      withTitle: L10n.text("Settings…"), action: #selector(openSettings), keyEquivalent: ",")
     menu.addItem(.separator())
-    menu.addItem(withTitle: "Quit Mouse Locator", action: #selector(quit), keyEquivalent: "q")
+    menu.addItem(
+      withTitle: L10n.text("Quit Mouse Locator"), action: #selector(quit), keyEquivalent: "q")
     menu.items.forEach { $0.target = self }
     item.menu = menu
     statusItem = item
@@ -86,8 +90,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     } catch {
       let alert = NSAlert(error: error)
       alert.messageText = enabled
-        ? "Couldn’t Enable Launch at Login"
-        : "Couldn’t Disable Launch at Login"
+        ? L10n.text("Couldn’t Enable Launch at Login")
+        : L10n.text("Couldn’t Disable Launch at Login")
       alert.runModal()
     }
 
