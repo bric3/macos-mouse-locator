@@ -161,7 +161,7 @@ private func capture(
 ) async throws {
   let start =
     scenario.tail
-    ? CGPoint(x: captureOrigin.x + 120, y: captureOrigin.y + CGFloat(height) * 0.75)
+    ? CGPoint(x: captureOrigin.x + 120, y: captureOrigin.y + CGFloat(height) * 0.72)
     : CGPoint(x: captureOrigin.x + CGFloat(width) / 2 - 2, y: captureOrigin.y + CGFloat(height) / 2)
   try warpCursor(to: start)
 
@@ -200,12 +200,12 @@ private func capture(
         let progress =
           CGFloat((frame - 1) * movementsPerFrame + movement)
           / CGFloat(movementFrames * movementsPerFrame)
+        let zigZagPhase = (progress * 6).truncatingRemainder(dividingBy: 2)
+        let zigZag = zigZagPhase <= 1 ? zigZagPhase : 2 - zigZagPhase
         try warpCursor(
           to: CGPoint(
             x: captureOrigin.x + 120 + CGFloat(width - 240) * progress,
-            y: captureOrigin.y + CGFloat(height) * 0.75
-              - CGFloat(height) * 0.42 * sin(.pi * progress)
-              + 35 * sin(2 * .pi * progress)
+            y: captureOrigin.y + CGFloat(height) * (0.72 - 0.44 * zigZag)
           )
         )
         try await pause(milliseconds: 4)
