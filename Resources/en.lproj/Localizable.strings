@@ -1,0 +1,30 @@
+"Mouse Locator" = "Mouse Locator";
+"Mouse Tail" = "Mouse Tail";
+"Idle Pulse" = "Idle Pulse";
+"Settings…" = "Settings…";
+"Quit Mouse Locator" = "Quit Mouse Locator";
+"Couldn’t Enable Launch at Login" = "Couldn’t Enable Launch at Login";
+"Couldn’t Disable Launch at Login" = "Couldn’t Disable Launch at Login";
+
+"Could not read settings: %@" = "Could not read settings: %@";
+"Could not save settings: %@" = "Could not save settings: %@";
+"Could not reload settings: %@" = "Could not reload settings: %@";
+
+"Menu Bar" = "Menu Bar";
+"Show Mouse Locator in the menu bar" = "Show Mouse Locator in the menu bar";
+"Storage" = "Storage";
+
+"Show a fading trail behind the pointer" = "Show a fading trail behind the pointer";
+"Trail color" = "Trail color";
+"Rainbow colors" = "Rainbow colors";
+"Trail thickness" = "Trail thickness";
+"Cursor gap" = "Cursor gap";
+
+"Pulse when the pointer moves after being idle" = "Pulse when the pointer moves after being idle";
+"Circle color" = "Circle color";
+"Inactivity delay" = "Inactivity delay";
+"Circle thickness" = "Circle thickness";
+"Maximum size" = "Maximum size";
+
+"%d pt" = "%d pt";
+"%.1f s" = "%.1f s";
