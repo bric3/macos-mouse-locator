@@ -16,6 +16,7 @@ final class LocatorSettings: NSObject, ObservableObject {
   @Published var tailColor: String { didSet { save() } }
   @Published var tailDotsEnabled: Bool { didSet { save() } }
   @Published var tailEnabled: Bool { didSet { save() } }
+  @Published var tailGap: Double { didSet { save() } }
   @Published var tailRainbow: Bool { didSet { save() } }
   @Published var tailSmoothing: String { didSet { save() } }
   @Published var tailThickness: Double { didSet { save() } }
@@ -62,6 +63,7 @@ final class LocatorSettings: NSObject, ObservableObject {
     tailColor = stored.tailColor ?? "accent"
     tailDotsEnabled = stored.tailDotsEnabled ?? false
     tailEnabled = stored.tailEnabled
+    tailGap = stored.tailGap ?? 16
     tailRainbow = stored.tailRainbow ?? false
     tailSmoothing = stored.tailSmoothing ?? "bezier"
     tailThickness = stored.tailThickness
@@ -96,6 +98,7 @@ final class LocatorSettings: NSObject, ObservableObject {
           tailColor: tailColor,
           tailDotsEnabled: tailDotsEnabled,
           tailEnabled: tailEnabled,
+          tailGap: tailGap,
           tailRainbow: tailRainbow,
           tailSmoothing: tailSmoothing,
           tailThickness: tailThickness
@@ -130,6 +133,7 @@ final class LocatorSettings: NSObject, ObservableObject {
       tailColor = stored.tailColor ?? "accent"
       tailDotsEnabled = stored.tailDotsEnabled ?? false
       tailEnabled = stored.tailEnabled
+      tailGap = stored.tailGap ?? 16
       tailRainbow = stored.tailRainbow ?? false
       tailSmoothing = stored.tailSmoothing ?? "bezier"
       tailThickness = stored.tailThickness
@@ -151,6 +155,7 @@ private struct StoredSettings: Codable {
   var tailColor: String?
   var tailDotsEnabled: Bool?
   var tailEnabled = true
+  var tailGap: Double?
   var tailRainbow: Bool?
   var tailSmoothing: String?
   var tailThickness = 3.0
@@ -167,6 +172,7 @@ private struct StoredSettings: Codable {
     tailColor: String,
     tailDotsEnabled: Bool,
     tailEnabled: Bool,
+    tailGap: Double,
     tailRainbow: Bool,
     tailSmoothing: String,
     tailThickness: Double
@@ -180,6 +186,7 @@ private struct StoredSettings: Codable {
     self.tailColor = tailColor
     self.tailDotsEnabled = tailDotsEnabled
     self.tailEnabled = tailEnabled
+    self.tailGap = tailGap
     self.tailRainbow = tailRainbow
     self.tailSmoothing = tailSmoothing
     self.tailThickness = tailThickness
@@ -187,7 +194,7 @@ private struct StoredSettings: Codable {
 
   var needsUpgrade: Bool {
     sonarColor == nil || sonarRainbow == nil || tailColor == nil || tailDotsEnabled == nil
-      || tailRainbow == nil || tailSmoothing == nil
+      || tailGap == nil || tailRainbow == nil || tailSmoothing == nil
   }
 
   init(legacy: [String: Any]) {
@@ -219,6 +226,17 @@ struct SettingsView: View {
             Slider(value: $settings.tailThickness, in: 2...20, step: 1)
               .frame(width: 180)
             Text("\(Int(settings.tailThickness)) pt")
+              .monospacedDigit()
+              .frame(width: 44, alignment: .trailing)
+          }
+        }
+        .disabled(!settings.tailEnabled)
+
+        LabeledContent("Cursor gap") {
+          HStack {
+            Slider(value: $settings.tailGap, in: 0...80, step: 2)
+              .frame(width: 180)
+            Text("\(Int(settings.tailGap)) pt")
               .monospacedDigit()
               .frame(width: 44, alignment: .trailing)
           }
