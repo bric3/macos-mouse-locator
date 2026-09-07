@@ -7,24 +7,6 @@ struct MouseLocatorApp: App {
   @StateObject private var settings = LocatorSettings.shared
 
   var body: some Scene {
-    MenuBarExtra(isInserted: $settings.menuBarIconEnabled) {
-      Toggle("Mouse Tail", isOn: $settings.tailEnabled)
-      Toggle("Idle Pulse", isOn: $settings.sonarEnabled)
-
-      SettingsLink {
-        Text("Settings…")
-      }
-
-      Divider()
-
-      Button("Quit Mouse Locator") {
-        NSApplication.shared.terminate(nil)
-      }
-    } label: {
-      Image(nsImage: locatorMenuBarImage)
-        .accessibilityLabel("Mouse Locator")
-    }
-
     Settings {
       SettingsView(settings: settings)
         .frame(width: 460, height: 580)
@@ -33,7 +15,7 @@ struct MouseLocatorApp: App {
 }
 
 @MainActor
-private let locatorMenuBarImage: NSImage = {
+let locatorMenuBarImage: NSImage = {
   let image = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { _ in
     NSColor.black.setStroke()
     for circle in [
