@@ -6,7 +6,7 @@ import CoreGraphics
 import Darwin
 import ImageIO
 import MouseLocatorCore
-import ScreenCaptureKit
+@preconcurrency import ScreenCaptureKit
 
 private let width = 900
 private let height = 520
