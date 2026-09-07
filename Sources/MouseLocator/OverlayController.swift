@@ -32,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   func applicationWillTerminate(_ notification: Notification) {
     LocatorSettings.shared.flush()
+    overlayController?.stop()
   }
 
   private func setStatusItemVisible(_ visible: Bool) {
@@ -115,6 +116,9 @@ extension AppDelegate: NSMenuDelegate {
 
 @MainActor
 private final class OverlayController: NSObject {
+  private static let frameInterval: TimeInterval = 0.02
+
+  private var eventMonitors: [Any] = []
   private var panels: [NSPanel] = []
   private var points: [TrailPoint] = []
   private var timer: Timer?
@@ -132,12 +136,40 @@ private final class OverlayController: NSObject {
       object: nil
     )
 
-    timer = Timer.scheduledTimer(withTimeInterval: 0.02, repeats: true) { [weak self] _ in
-      MainActor.assumeIsolated {
-        self?.tick()
+    let mouseEvents: NSEvent.EventTypeMask = [
+      .mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged,
+    ]
+    if let monitor = NSEvent.addGlobalMonitorForEvents(
+      matching: mouseEvents,
+      handler: { [weak self] _ in
+        Task { @MainActor in
+          self?.pointerMoved()
+        }
       }
+    ) {
+      eventMonitors.append(monitor)
     }
-    timer?.tolerance = 0.004
+    if let monitor = NSEvent.addLocalMonitorForEvents(
+      matching: mouseEvents,
+      handler: { [weak self] event in
+        Task { @MainActor in
+          self?.pointerMoved()
+        }
+        return event
+      }
+    ) {
+      eventMonitors.append(monitor)
+    }
+  }
+
+  func stop() {
+    timer?.invalidate()
+    timer = nil
+    eventMonitors.forEach(NSEvent.removeMonitor)
+    eventMonitors.removeAll()
+    NotificationCenter.default.removeObserver(self)
+    panels.forEach { $0.close() }
+    panels.removeAll()
   }
 
   @objc private func rebuildPanels() {
@@ -165,25 +197,46 @@ private final class OverlayController: NSObject {
     return panel
   }
 
-  private func tick() {
+  private func pointerMoved() {
     let settings = LocatorSettings.shared
     let now = ProcessInfo.processInfo.systemUptime
     let position = NSEvent.mouseLocation
 
-    if position != lastPosition {
-      let idleDuration = now - lastMovementTime
-      lastPosition = position
-      lastMovementTime = now
-      if settings.sonarEnabled,
-        idleDuration >= settings.sonarDelay
-      {
-        sonarPosition = position
-        sonarStartTime = now
-      }
-      if settings.tailEnabled {
-        points.append(TrailPoint(position: position, time: now))
+    guard position != lastPosition else { return }
+    let idleDuration = now - lastMovementTime
+    lastPosition = position
+    lastMovementTime = now
+    if settings.sonarEnabled, idleDuration >= settings.sonarDelay {
+      sonarPosition = position
+      sonarStartTime = now
+    } else if sonarStartTime != nil {
+      sonarPosition = position
+    }
+    if settings.tailEnabled,
+      points.last.map({ now - $0.time >= Self.frameInterval }) ?? true
+    {
+      points.append(TrailPoint(position: position, time: now))
+    }
+
+    guard !points.isEmpty || sonarStartTime != nil else { return }
+    startAnimationTimer()
+  }
+
+  private func startAnimationTimer() {
+    guard timer == nil else { return }
+    timer = Timer.scheduledTimer(withTimeInterval: Self.frameInterval, repeats: true) {
+      [weak self] _ in
+      MainActor.assumeIsolated {
+        self?.tick()
       }
     }
+    timer?.tolerance = 0.004
+    tick()
+  }
+
+  private func tick() {
+    let settings = LocatorSettings.shared
+    let now = ProcessInfo.processInfo.systemUptime
 
     points.removeAll { now - $0.time >= EffectTiming.trailLifetime }
     if !settings.tailEnabled {
@@ -193,8 +246,6 @@ private final class OverlayController: NSObject {
     if !settings.sonarEnabled {
       sonarPosition = nil
       sonarStartTime = nil
-    } else if sonarStartTime != nil {
-      sonarPosition = position
     }
     let sonarProgress = sonarStartTime.flatMap { EffectTiming.sonarProgress(elapsed: now - $0) }
     if sonarStartTime != nil, sonarProgress == nil {
@@ -223,6 +274,10 @@ private final class OverlayController: NSObject {
         view.frameState = frameState
         view.needsDisplay = true
       }
+    }
+    if points.isEmpty, sonarStartTime == nil {
+      timer?.invalidate()
+      timer = nil
     }
   }
 }

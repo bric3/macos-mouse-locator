@@ -295,6 +295,12 @@ private func warpCursor(to point: CGPoint) throws {
   guard result == .success else {
     throw CaptureError("Could not move the pointer (CoreGraphics error \(result.rawValue))")
   }
+  CGEvent(
+    mouseEventSource: nil,
+    mouseType: .mouseMoved,
+    mouseCursorPosition: point,
+    mouseButton: .left
+  )?.post(tap: .cghidEventTap)
 }
 
 private func pause(milliseconds: UInt64) async throws {
