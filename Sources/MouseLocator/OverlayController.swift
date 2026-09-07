@@ -263,7 +263,9 @@ private final class OverlayController: NSObject {
       sonarPosition = nil
       sonarStartTime = nil
     }
-    let sonarProgress = sonarStartTime.flatMap { EffectTiming.sonarProgress(elapsed: now - $0) }
+    let sonarProgress = sonarStartTime.flatMap {
+      EffectTiming.sonarProgress(elapsed: now - $0, speed: settings.sonarExpansionSpeed)
+    }
     if sonarStartTime != nil, sonarProgress == nil {
       sonarPosition = nil
       sonarStartTime = nil
@@ -280,7 +282,6 @@ private final class OverlayController: NSObject {
       sonarPosition: sonarPosition,
       sonarProgress: sonarProgress,
       sonarColor: .locatorColor(settings.sonarColor),
-      sonarExpansionSpeed: settings.sonarExpansionSpeed,
       sonarRainbow: settings.sonarRainbow,
       sonarSize: settings.sonarSize,
       sonarLineWidth: settings.sonarThickness
@@ -328,7 +329,6 @@ private struct OverlayFrame {
   let sonarPosition: NSPoint?
   let sonarProgress: Double?
   let sonarColor: NSColor
-  let sonarExpansionSpeed: Double
   let sonarRainbow: Bool
   let sonarSize: CGFloat
   let sonarLineWidth: CGFloat
@@ -349,11 +349,7 @@ private struct OverlayFrame {
       )
     }
     if let position = sonarPosition, let progress = sonarProgress {
-      let expansionProgress = EffectTiming.sonarExpansionProgress(
-        lifetimeProgress: progress,
-        speed: sonarExpansionSpeed
-      )
-      let diameter = 24 + (sonarSize - 24) * expansionProgress
+      let diameter = 24 + (sonarSize - 24) * progress
       let radius = diameter / 2 + sonarLineWidth
       result = result.union(
         NSRect(
@@ -381,7 +377,6 @@ private final class OverlayView: NSView {
     sonarPosition: nil,
     sonarProgress: nil,
     sonarColor: .controlAccentColor,
-    sonarExpansionSpeed: 1,
     sonarRainbow: false,
     sonarSize: 180,
     sonarLineWidth: 3
@@ -471,11 +466,7 @@ private final class OverlayView: NSView {
     }
 
     if let position = frameState.sonarPosition, let progress = frameState.sonarProgress {
-      let expansionProgress = EffectTiming.sonarExpansionProgress(
-        lifetimeProgress: progress,
-        speed: frameState.sonarExpansionSpeed
-      )
-      let diameter = 24 + (frameState.sonarSize - 24) * expansionProgress
+      let diameter = 24 + (frameState.sonarSize - 24) * progress
       let center = position - origin
       let path = NSBezierPath()
       path.appendOval(
