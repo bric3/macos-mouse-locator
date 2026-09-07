@@ -225,6 +225,21 @@ struct SettingsView: View {
 
   var body: some View {
     Form {
+      Section("Menu Bar") {
+        Toggle("Show Mouse Locator in the menu bar", isOn: $settings.menuBarIconEnabled)
+      }
+
+      Section("Storage") {
+        Text(settings.configurationURL.path(percentEncoded: false))
+          .font(.caption)
+          .textSelection(.enabled)
+        if let storageError = settings.storageError {
+          Text(storageError)
+            .font(.caption)
+            .foregroundStyle(.red)
+        }
+      }
+
       Section("Mouse Tail") {
         Toggle("Show a fading trail behind the pointer", isOn: $settings.tailEnabled)
 
@@ -300,20 +315,6 @@ struct SettingsView: View {
         .disabled(!settings.sonarEnabled)
       }
 
-      Section("Menu Bar") {
-        Toggle("Show Mouse Locator in the menu bar", isOn: $settings.menuBarIconEnabled)
-      }
-
-      Section("Storage") {
-        Text(settings.configurationURL.path(percentEncoded: false))
-          .font(.caption)
-          .textSelection(.enabled)
-        if let storageError = settings.storageError {
-          Text(storageError)
-            .font(.caption)
-            .foregroundStyle(.red)
-        }
-      }
     }
     .formStyle(.grouped)
   }
