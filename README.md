@@ -1,5 +1,9 @@
 # Mouse Locator
 
+[![CI](https://github.com/bric3/macos-mouse-locator/actions/workflows/ci.yml/badge.svg)](https://github.com/bric3/macos-mouse-locator/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/bric3/macos-mouse-locator/actions/workflows/codeql.yml/badge.svg)](https://github.com/bric3/macos-mouse-locator/actions/workflows/codeql.yml)
+[![Version](https://img.shields.io/badge/version-v0.1.0-blue)](https://github.com/bric3/macos-mouse-locator/tree/v0.1.0)
+
 **Tired of shaking your mouse or trackpad just to find the pointer?**
 
 Mouse Locator brings to macOS the mouse-finder effects that Linux desktops have
