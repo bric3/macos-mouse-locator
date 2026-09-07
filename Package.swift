@@ -23,6 +23,9 @@ let package = Package(
       name: "MouseLocatorCheck",
       dependencies: ["MouseLocatorCore"]
     ),
-    .executableTarget(name: "MouseLocatorCapture"),
+    .executableTarget(
+      name: "MouseLocatorCapture",
+      dependencies: ["MouseLocatorCore"]
+    ),
   ]
 )
