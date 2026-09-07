@@ -16,6 +16,9 @@
 "Copy" = "Copy";
 
 "Show a fading trail behind the pointer" = "Show a fading trail behind the pointer";
+"Show trail" = "Show trail";
+"Always" = "Always";
+"After inactivity" = "After inactivity";
 "Trail color" = "Trail color";
 "Rainbow colors" = "Rainbow colors";
 "Trail thickness" = "Trail thickness";
@@ -24,8 +27,10 @@
 "Pulse when the pointer moves after being idle" = "Pulse when the pointer moves after being idle";
 "Circle color" = "Circle color";
 "Inactivity delay" = "Inactivity delay";
+"Expansion speed" = "Expansion speed";
 "Circle thickness" = "Circle thickness";
 "Maximum size" = "Maximum size";
 
 "%d pt" = "%d pt";
 "%.1f s" = "%.1f s";
+"%.1f×" = "%.1f×";

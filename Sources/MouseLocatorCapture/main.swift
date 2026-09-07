@@ -335,13 +335,16 @@ private struct Settings: Encodable {
   let sonarColor: String
   let sonarDelay = 1.0
   let sonarEnabled: Bool
+  let sonarExpansionSpeed = 1.0
   let sonarRainbow = false
   let sonarSize = 240.0
   let sonarThickness = 3.0
   let tailColor: String
+  let tailActivationMode = "always"
   let tailDotsEnabled = false
   let tailEnabled: Bool
   let tailGap = 16.0
+  let tailInactivityDelay = 3.0
   let tailRainbow: Bool
   let tailSmoothing = "bezier"
   let tailThickness = 3.0
