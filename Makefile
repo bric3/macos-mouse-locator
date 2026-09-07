@@ -6,7 +6,7 @@ INSTALLED_APP := $(INSTALL_DIR)/MouseLocator.app
 INSTALLED_PREFPANE := $(PREFPANE_INSTALL_DIR)/MouseLocator.prefPane
 SWIFT_TARGET := $(shell uname -m)-apple-macosx14.0
 
-.PHONY: build test release app prefpane install uninstall run clean
+.PHONY: build test release app prefpane screenshots install uninstall run clean
 
 build:
 	swift build
@@ -36,6 +36,9 @@ prefpane: release
 	cp Resources/PreferencePane-Info.plist $(PREFPANE_BUNDLE)/Contents/Info.plist
 	cp Resources/MouseLocator.icns $(PREFPANE_BUNDLE)/Contents/Resources/MouseLocator.icns
 	codesign --force --sign - $(PREFPANE_BUNDLE)
+
+screenshots: app
+	jbang scripts/CaptureShowcases.java
 
 install: app prefpane
 	mkdir -p "$(INSTALL_DIR)"

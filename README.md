@@ -4,6 +4,40 @@ A native macOS menu bar app that makes the pointer easier to find with a
 configurable fading mouse trail and an idle pulse when movement resumes after
 inactivity.
 
+## Showcase
+
+### Mouse trail
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="github/docs/images/trail-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="github/docs/images/trail-light.png">
+  <img alt="A blue mouse trail following the pointer" src="github/docs/images/trail-light.png">
+</picture>
+
+### Idle pulse
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="github/docs/images/idle-pulse-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="github/docs/images/idle-pulse-light.png">
+  <img alt="An expanding circle locating the pointer after inactivity" src="github/docs/images/idle-pulse-light.png">
+</picture>
+
+### Mouse trail and idle pulse
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="github/docs/images/both-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="github/docs/images/both-light.png">
+  <img alt="A mouse trail and idle pulse enabled together" src="github/docs/images/both-light.png">
+</picture>
+
+### Rainbow trail
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="github/docs/images/rainbow-trail-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="github/docs/images/rainbow-trail-light.png">
+  <img alt="A rainbow mouse trail following the pointer" src="github/docs/images/rainbow-trail-light.png">
+</picture>
+
 ## Requirements
 
 - macOS 14 or later
@@ -16,6 +50,15 @@ make test
 make app
 open .build/MouseLocator.app
 ```
+
+Regenerate all showcase images over an isolated blank panel with:
+
+```sh
+make screenshots
+```
+
+The command temporarily stops and restores an installed Mouse Locator process.
+It uses isolated temporary settings and does not modify the user configuration.
 
 Mouse Locator is available from the menu bar. Its two effects can be enabled
 together and configured from either the menu-bar Settings window or the Mouse
