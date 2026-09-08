@@ -557,22 +557,32 @@ private final class OverlayView: NSView {
         let startDistance = distance
         let segmentDistance = previous.position.distance(to: point.position)
         distance += segmentDistance
-        let startShade = frameState.tailSpeedShadingEnabled
+        let startSpeedFactor = frameState.tailSpeedShadingEnabled
           ? EffectTiming.trailSpeedFactor(
             distance: Double(segmentDistance),
             duration: point.time - previous.time
           )
           : 1
         let followingDistance = point.position.distance(to: following.position)
-        let endShade = frameState.tailSpeedShadingEnabled
+        let endSpeedFactor = frameState.tailSpeedShadingEnabled
           && index + 1 < frameState.points.count
           ? EffectTiming.trailSpeedFactor(
             distance: Double(followingDistance),
             duration: following.time - point.time
           )
-          : startShade
-        let startFade = EffectTiming.trailOpacity(age: frameState.now - previous.time)
-        let endFade = EffectTiming.trailOpacity(age: frameState.now - point.time)
+          : startSpeedFactor
+        let startAge = frameState.now - previous.time
+        let endAge = frameState.now - point.time
+        let startFade = EffectTiming.trailOpacity(age: startAge)
+        let endFade = EffectTiming.trailOpacity(age: endAge)
+        let startShade = EffectTiming.trailShadeFactor(
+          speedFactor: startSpeedFactor,
+          age: startAge
+        )
+        let endShade = EffectTiming.trailShadeFactor(
+          speedFactor: endSpeedFactor,
+          age: endAge
+        )
         let start = previous.position - origin
         let end = point.position - origin
         let path = NSBezierPath()

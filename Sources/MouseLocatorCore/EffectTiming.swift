@@ -34,6 +34,11 @@ public enum EffectTiming {
     let speed = max(0, min(1, distance / duration / 1_800))
     return 1 - (1 - speed) * (1 - speed)
   }
+
+  public static func trailShadeFactor(speedFactor: Double, age: TimeInterval) -> Double {
+    let speedFactor = max(0, min(1, speedFactor))
+    return 1 - (1 - speedFactor) * (1 - trailOpacity(age: age))
+  }
 }
 
 public enum TailGeometry {
