@@ -124,7 +124,7 @@ final class LocatorSettings: NSObject, ObservableObject {
     tailGap = stored.tailGap ?? 16
     tailInactivityDelay = stored.tailInactivityDelay ?? 3
     tailRainbow = stored.tailRainbow ?? false
-    tailSpeedShadingEnabled = stored.tailSpeedShadingEnabled ?? false
+    tailSpeedShadingEnabled = stored.tailSpeedShadingEnabled ?? true
     tailSmoothing = stored.tailSmoothing ?? "bezier"
     tailThickness = stored.tailThickness
     super.init()
@@ -250,7 +250,7 @@ final class LocatorSettings: NSObject, ObservableObject {
       tailGap = stored.tailGap ?? 16
       tailInactivityDelay = stored.tailInactivityDelay ?? 3
       tailRainbow = stored.tailRainbow ?? false
-      tailSpeedShadingEnabled = stored.tailSpeedShadingEnabled ?? false
+      tailSpeedShadingEnabled = stored.tailSpeedShadingEnabled ?? true
       tailSmoothing = stored.tailSmoothing ?? "bezier"
       tailThickness = stored.tailThickness
       isReady = true
@@ -405,7 +405,7 @@ private struct StoredSettings: Codable {
           ("tailInactivityDelay", String(tailInactivityDelay ?? 3)),
           ("tailColor", FlatTOML.quoted(tailColor ?? "accent")),
           ("tailRainbow", String(tailRainbow ?? false)),
-          ("tailSpeedShadingEnabled", String(tailSpeedShadingEnabled ?? false)),
+          ("tailSpeedShadingEnabled", String(tailSpeedShadingEnabled ?? true)),
           ("tailThickness", String(tailThickness)),
           ("tailGap", String(tailGap ?? 16)),
           ("tailDotsEnabled", String(tailDotsEnabled ?? false)),
