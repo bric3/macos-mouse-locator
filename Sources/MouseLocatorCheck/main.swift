@@ -14,7 +14,7 @@ precondition(EffectTiming.trailOpacity(age: EffectTiming.trailLifetime) == 0)
 precondition(
   approximatelyEqual(
     EffectTiming.trailSpeedFactor(distance: 18, duration: 0.02, thickness: 3),
-    0.5
+    0.75
   )
 )
 precondition(EffectTiming.trailSpeedFactor(distance: 60, duration: 0.02, thickness: 3) == 1)

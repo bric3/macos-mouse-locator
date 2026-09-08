@@ -32,7 +32,8 @@ public enum EffectTiming {
     thickness: Double
   ) -> Double {
     guard duration > 0, thickness > 0 else { return 1 }
-    return max(0, min(1, distance / duration / (600 * thickness)))
+    let speed = max(0, min(1, distance / duration / (600 * thickness)))
+    return 1 - (1 - speed) * (1 - speed)
   }
 }
 
