@@ -136,6 +136,11 @@ private final class OverlayController: NSObject {
   private var sonarStartTime: TimeInterval?
 
   func start() {
+    if CommandLine.arguments.contains("--dark-appearance") {
+      NSApp.appearance = NSAppearance(named: .darkAqua)
+    } else if CommandLine.arguments.contains("--light-appearance") {
+      NSApp.appearance = NSAppearance(named: .aqua)
+    }
     rebuildPanels()
     NotificationCenter.default.addObserver(
       self,
@@ -455,8 +460,8 @@ private struct OverlayFrame {
       let curveMarginX = tailSmoothing == "none" ? 0 : pointBounds.width / 6
       let curveMarginY = tailSmoothing == "none" ? 0 : pointBounds.height / 6
       result = pointBounds.insetBy(
-        dx: -(curveMarginX + tailLineWidth),
-        dy: -(curveMarginY + tailLineWidth)
+        dx: -(curveMarginX + tailLineWidth * 2),
+        dy: -(curveMarginY + tailLineWidth * 2)
       )
     }
     if let position = sonarPosition, let progress = sonarProgress {
@@ -476,6 +481,12 @@ private struct OverlayFrame {
 }
 
 private final class OverlayView: NSView {
+  private static let darkRainbow = NSGradient(colors: [
+    .locatorColor("#FF6B6B"),
+    .locatorColor("#4ECDC4"),
+    .locatorColor("#FFE66D"),
+  ])!
+
   var frameState = OverlayFrame(
     points: [],
     tailColor: .controlAccentColor,
@@ -499,6 +510,7 @@ private final class OverlayView: NSView {
     guard let origin = window?.frame.origin else { return }
 
     if frameState.points.count > 1 {
+      let darkAppearance = effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
       NSGraphicsContext.saveGraphicsState()
       if frameState.tailGap > 0, let cursor = frameState.points.last?.position {
         let radius = frameState.tailGap + frameState.tailLineWidth / 2
@@ -518,11 +530,21 @@ private final class OverlayView: NSView {
         $0 + $1.0.position.distance(to: $1.1.position)
       }
       var distance: CGFloat = 0
+      var segments: [(
+        path: NSBezierPath,
+        start: NSPoint,
+        end: NSPoint,
+        startDistance: CGFloat,
+        endDistance: CGFloat,
+        startOpacity: Double,
+        endOpacity: Double
+      )] = []
       for index in 1..<frameState.points.count {
         let previous = frameState.points[index - 1]
         let point = frameState.points[index]
         let startDistance = distance
         distance += previous.position.distance(to: point.position)
+        let startOpacity = EffectTiming.trailOpacity(age: frameState.now - previous.time)
         let opacity = EffectTiming.trailOpacity(age: frameState.now - point.time)
         let start = previous.position - origin
         let end = point.position - origin
@@ -554,23 +576,38 @@ private final class OverlayView: NSView {
             controlPoint2: NSPoint(x: controlX.second, y: controlY.second) - origin
           )
         }
+        segments.append(
+          (path, start, end, startDistance, distance, startOpacity, opacity)
+        )
+      }
+      for segment in segments {
+        drawRibbonEdge(
+          segment.path,
+          opacity: (segment.startOpacity + segment.endOpacity) / 2,
+          darkAppearance: darkAppearance
+        )
+      }
+      for segment in segments {
         if frameState.tailRainbow {
-          let startColor = NSColor(
-            calibratedHue: totalDistance > 0 ? startDistance / totalDistance : 0,
-            saturation: 0.9,
-            brightness: 1,
-            alpha: EffectTiming.trailOpacity(age: frameState.now - previous.time) * 0.85
+          let startColor = rainbowColor(
+            at: totalDistance > 0 ? segment.startDistance / totalDistance : 0,
+            opacity: segment.startOpacity,
+            darkAppearance: darkAppearance
           )
-          let endColor = NSColor(
-            calibratedHue: totalDistance > 0 ? distance / totalDistance : 0,
-            saturation: 0.9,
-            brightness: 1,
-            alpha: opacity * 0.85
+          let endColor = rainbowColor(
+            at: totalDistance > 0 ? segment.endDistance / totalDistance : 0,
+            opacity: segment.endOpacity,
+            darkAppearance: darkAppearance
           )
-          stroke(path, from: start, to: end, colors: [startColor, endColor])
+          stroke(
+            segment.path,
+            from: segment.start,
+            to: segment.end,
+            colors: [startColor, endColor]
+          )
         } else {
-          frameState.tailColor.withAlphaComponent(opacity * 0.85).setStroke()
-          path.stroke()
+          frameState.tailColor.withAlphaComponent(segment.endOpacity * 0.85).setStroke()
+          segment.path.stroke()
         }
       }
       NSGraphicsContext.restoreGraphicsState()
@@ -601,6 +638,41 @@ private final class OverlayView: NSView {
       color.withAlphaComponent((1 - progress) * 0.9).setStroke()
       path.stroke()
     }
+  }
+
+  private func drawRibbonEdge(
+    _ path: NSBezierPath,
+    opacity: Double,
+    darkAppearance: Bool
+  ) {
+    guard let context = NSGraphicsContext.current?.cgContext else { return }
+
+    let alpha = CGFloat(opacity) * (darkAppearance ? 0.4 : 0.24)
+    let color = NSColor.black.withAlphaComponent(alpha).cgColor
+    context.saveGState()
+    context.setShadow(
+      offset: CGSize(width: 0, height: -1),
+      blur: max(1.5, path.lineWidth * 0.7),
+      color: color
+    )
+    context.addPath(path.cgPath)
+    context.setStrokeColor(color)
+    context.setLineWidth(path.lineWidth + max(1.5, path.lineWidth * 0.35))
+    context.setLineCap(frameState.tailDotsEnabled ? .round : .butt)
+    context.setLineJoin(.round)
+    context.strokePath()
+    context.restoreGState()
+  }
+
+  private func rainbowColor(
+    at location: CGFloat,
+    opacity: Double,
+    darkAppearance: Bool
+  ) -> NSColor {
+    let color = darkAppearance
+      ? Self.darkRainbow.interpolatedColor(atLocation: location)
+      : NSColor(calibratedHue: location, saturation: 0.9, brightness: 1, alpha: 1)
+    return color.withAlphaComponent(CGFloat(opacity) * (darkAppearance ? 0.72 : 0.85))
   }
 
   private func stroke(

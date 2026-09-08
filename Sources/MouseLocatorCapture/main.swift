@@ -10,6 +10,14 @@ import MouseLocatorCore
 
 private let width = 900
 private let height = 520
+private let trailWaypoints = [
+  CGPoint(x: 0.07, y: 0.20),
+  CGPoint(x: 0.26, y: 0.58),
+  CGPoint(x: 0.28, y: 0.22),
+  CGPoint(x: 0.56, y: 0.67),
+  CGPoint(x: 0.51, y: 0.14),
+  CGPoint(x: 0.76, y: 0.61),
+]
 private let scenarios = [
   Scenario(name: "trail", tail: true, pulse: false, rainbow: false),
   Scenario(name: "idle-pulse", tail: false, pulse: true, rainbow: false),
@@ -162,7 +170,7 @@ private func capture(
 ) async throws {
   let start =
     scenario.tail
-    ? CGPoint(x: captureOrigin.x + 120, y: captureOrigin.y + CGFloat(height) * 0.72)
+    ? trailPosition(progress: 0, captureOrigin: captureOrigin)
     : CGPoint(x: captureOrigin.x + CGFloat(width) / 2 - 2, y: captureOrigin.y + CGFloat(height) / 2)
   try warpCursor(to: start)
 
@@ -176,7 +184,10 @@ private func capture(
 
   let overlay = Process()
   overlay.executableURL = app
-  overlay.arguments = ["--config-home=\(configHome.path)"]
+  overlay.arguments = [
+    "--config-home=\(configHome.path)",
+    dark ? "--dark-appearance" : "--light-appearance",
+  ]
   try overlay.run()
   defer {
     overlay.terminate()
@@ -192,24 +203,17 @@ private func capture(
   try await pause(milliseconds: scenario.pulse ? 1_800 : 500)
   var frames: [CGImage] = []
   if scenario.tail {
-    let movementFrames = 24
-    let movementsPerFrame = 3
+    let movementFrames = 8
+    let movementsPerFrame = 9
     for frame in 1...movementFrames {
       for movement in 1...movementsPerFrame {
         let progress =
           CGFloat((frame - 1) * movementsPerFrame + movement)
           / CGFloat(movementFrames * movementsPerFrame)
-        let zigZagPhase = (progress * 6).truncatingRemainder(dividingBy: 2)
-        let zigZag = zigZagPhase <= 1 ? zigZagPhase : 2 - zigZagPhase
-        try warpCursor(
-          to: CGPoint(
-            x: captureOrigin.x + 120 + CGFloat(width - 240) * progress,
-            y: captureOrigin.y + CGFloat(height) * (0.72 - 0.44 * zigZag)
-          )
-        )
-        try await pause(milliseconds: 4)
+        try warpCursor(to: trailPosition(progress: progress, captureOrigin: captureOrigin))
+        try await pause(milliseconds: 3)
       }
-      try await pause(milliseconds: 12)
+      try await pause(milliseconds: 6)
       frames.append(try await captureFrame(filter: filter, configuration: configuration))
     }
     for _ in 0..<(scenario.pulse ? 16 : 8) {
@@ -228,6 +232,18 @@ private func capture(
   try writeAnimatedPNG(
     frames,
     to: output.appendingPathComponent("\(scenario.name)-\(appearance).png")
+  )
+}
+
+private func trailPosition(progress: CGFloat, captureOrigin: CGPoint) -> CGPoint {
+  let scaled = min(max(progress, 0), 1) * CGFloat(trailWaypoints.count - 1)
+  let index = min(Int(scaled), trailWaypoints.count - 2)
+  let amount = scaled - CGFloat(index)
+  let start = trailWaypoints[index]
+  let end = trailWaypoints[index + 1]
+  return CGPoint(
+    x: captureOrigin.x + CGFloat(width) * (start.x + (end.x - start.x) * amount),
+    y: captureOrigin.y + CGFloat(height) * (start.y + (end.y - start.y) * amount)
   )
 }
 
@@ -344,7 +360,7 @@ private struct Settings {
   let sonarExpansionSpeed = 1.0
   let sonarRainbow = false
   let sonarSize = 240.0
-  let sonarThickness = 3.0
+  let sonarThickness = 6.0
   let tailColor: String
   let tailActivationMode = "always"
   let tailDotsEnabled = false
@@ -353,7 +369,7 @@ private struct Settings {
   let tailInactivityDelay = 3.0
   let tailRainbow: Bool
   let tailSmoothing = "bezier"
-  let tailThickness = 3.0
+  let tailThickness = 8.0
 
   init(scenario: Scenario, dark: Bool) {
     sonarColor = dark ? "#69AFFF" : "#006BD6"
