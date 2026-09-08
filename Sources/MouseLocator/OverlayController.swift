@@ -583,7 +583,10 @@ private final class OverlayView: NSView {
       for segment in segments {
         drawRibbonEdge(
           segment.path,
-          opacity: (segment.startOpacity + segment.endOpacity) / 2,
+          from: segment.start,
+          to: segment.end,
+          startOpacity: segment.startOpacity,
+          endOpacity: segment.endOpacity,
           darkAppearance: darkAppearance
         )
       }
@@ -606,8 +609,15 @@ private final class OverlayView: NSView {
             colors: [startColor, endColor]
           )
         } else {
-          frameState.tailColor.withAlphaComponent(segment.endOpacity * 0.85).setStroke()
-          segment.path.stroke()
+          stroke(
+            segment.path,
+            from: segment.start,
+            to: segment.end,
+            colors: [
+              frameState.tailColor.withAlphaComponent(segment.startOpacity * 0.85),
+              frameState.tailColor.withAlphaComponent(segment.endOpacity * 0.85),
+            ]
+          )
         }
       }
       NSGraphicsContext.restoreGraphicsState()
@@ -642,26 +652,24 @@ private final class OverlayView: NSView {
 
   private func drawRibbonEdge(
     _ path: NSBezierPath,
-    opacity: Double,
+    from start: NSPoint,
+    to end: NSPoint,
+    startOpacity: Double,
+    endOpacity: Double,
     darkAppearance: Bool
   ) {
-    guard let context = NSGraphicsContext.current?.cgContext else { return }
-
-    let alpha = CGFloat(opacity) * (darkAppearance ? 0.4 : 0.24)
-    let color = NSColor.black.withAlphaComponent(alpha).cgColor
-    context.saveGState()
-    context.setShadow(
-      offset: CGSize(width: 0, height: -1),
-      blur: max(1.5, path.lineWidth * 0.7),
-      color: color
+    let edge = path.copy() as! NSBezierPath
+    edge.lineWidth += max(1.5, path.lineWidth * 0.35)
+    let alpha = darkAppearance ? 0.4 : 0.24
+    stroke(
+      edge,
+      from: start,
+      to: end,
+      colors: [
+        NSColor.black.withAlphaComponent(CGFloat(startOpacity) * alpha),
+        NSColor.black.withAlphaComponent(CGFloat(endOpacity) * alpha),
+      ]
     )
-    context.addPath(path.cgPath)
-    context.setStrokeColor(color)
-    context.setLineWidth(path.lineWidth + max(1.5, path.lineWidth * 0.35))
-    context.setLineCap(frameState.tailDotsEnabled ? .round : .butt)
-    context.setLineJoin(.round)
-    context.strokePath()
-    context.restoreGState()
   }
 
   private func rainbowColor(
