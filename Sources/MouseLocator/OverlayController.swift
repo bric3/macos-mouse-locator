@@ -393,6 +393,7 @@ private final class OverlayController: NSObject {
       tailGap: settings.tailGap,
       tailLineWidth: settings.tailThickness,
       tailRainbow: settings.tailRainbow,
+      tailSpeedShadingEnabled: settings.tailSpeedShadingEnabled,
       tailSmoothing: settings.tailSmoothing,
       now: now,
       sonarPosition: sonarPosition,
@@ -440,6 +441,7 @@ private struct OverlayFrame {
   let tailGap: CGFloat
   let tailLineWidth: CGFloat
   let tailRainbow: Bool
+  let tailSpeedShadingEnabled: Bool
   let tailSmoothing: String
   let now: TimeInterval
   let sonarPosition: NSPoint?
@@ -494,6 +496,7 @@ private final class OverlayView: NSView {
     tailGap: 16,
     tailLineWidth: 3,
     tailRainbow: false,
+    tailSpeedShadingEnabled: false,
     tailSmoothing: "bezier",
     now: 0,
     sonarPosition: nil,
@@ -542,10 +545,29 @@ private final class OverlayView: NSView {
       for index in 1..<frameState.points.count {
         let previous = frameState.points[index - 1]
         let point = frameState.points[index]
+        let following = frameState.points[min(frameState.points.count - 1, index + 1)]
         let startDistance = distance
-        distance += previous.position.distance(to: point.position)
-        let startOpacity = EffectTiming.trailOpacity(age: frameState.now - previous.time)
-        let opacity = EffectTiming.trailOpacity(age: frameState.now - point.time)
+        let segmentDistance = previous.position.distance(to: point.position)
+        distance += segmentDistance
+        let startShade = frameState.tailSpeedShadingEnabled
+          ? EffectTiming.trailSpeedFactor(
+            distance: Double(segmentDistance),
+            duration: point.time - previous.time,
+            thickness: Double(frameState.tailLineWidth)
+          )
+          : 1
+        let followingDistance = point.position.distance(to: following.position)
+        let endShade = frameState.tailSpeedShadingEnabled
+          && index + 1 < frameState.points.count
+          ? EffectTiming.trailSpeedFactor(
+            distance: Double(followingDistance),
+            duration: following.time - point.time,
+            thickness: Double(frameState.tailLineWidth)
+          )
+          : startShade
+        let startOpacity = min(
+          EffectTiming.trailOpacity(age: frameState.now - previous.time), startShade)
+        let opacity = min(EffectTiming.trailOpacity(age: frameState.now - point.time), endShade)
         let start = previous.position - origin
         let end = point.position - origin
         let path = NSBezierPath()
@@ -557,7 +579,7 @@ private final class OverlayView: NSView {
           path.line(to: end)
         } else {
           let before = frameState.points[max(0, index - 2)].position
-          let after = frameState.points[min(frameState.points.count - 1, index + 1)].position
+          let after = following.position
           let controlX = TailGeometry.bezierControlValues(
             previous: before.x,
             start: previous.position.x,

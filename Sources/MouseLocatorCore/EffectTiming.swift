@@ -25,6 +25,15 @@ public enum EffectTiming {
   public static func trailOpacity(age: TimeInterval) -> Double {
     max(0, min(1, 1 - age / trailLifetime))
   }
+
+  public static func trailSpeedFactor(
+    distance: Double,
+    duration: TimeInterval,
+    thickness: Double
+  ) -> Double {
+    guard duration > 0, thickness > 0 else { return 1 }
+    return max(0, min(1, distance / duration / (600 * thickness)))
+  }
 }
 
 public enum TailGeometry {

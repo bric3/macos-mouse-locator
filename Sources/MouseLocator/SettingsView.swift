@@ -47,6 +47,7 @@ final class LocatorSettings: NSObject, ObservableObject {
   @Published var tailGap: Double { didSet { scheduleSave() } }
   @Published var tailInactivityDelay: Double { didSet { scheduleSave() } }
   @Published var tailRainbow: Bool { didSet { saveNow() } }
+  @Published var tailSpeedShadingEnabled: Bool { didSet { saveNow() } }
   @Published var tailSmoothing: String { didSet { saveNow() } }
   @Published var tailThickness: Double { didSet { scheduleSave() } }
   @Published private(set) var inputMonitoringPermissionGranted: Bool?
@@ -123,6 +124,7 @@ final class LocatorSettings: NSObject, ObservableObject {
     tailGap = stored.tailGap ?? 16
     tailInactivityDelay = stored.tailInactivityDelay ?? 3
     tailRainbow = stored.tailRainbow ?? false
+    tailSpeedShadingEnabled = stored.tailSpeedShadingEnabled ?? false
     tailSmoothing = stored.tailSmoothing ?? "bezier"
     tailThickness = stored.tailThickness
     super.init()
@@ -204,6 +206,7 @@ final class LocatorSettings: NSObject, ObservableObject {
         tailGap: tailGap,
         tailInactivityDelay: tailInactivityDelay,
         tailRainbow: tailRainbow,
+        tailSpeedShadingEnabled: tailSpeedShadingEnabled,
         tailSmoothing: tailSmoothing,
         tailThickness: tailThickness
       ).toml.write(to: configurationURL, atomically: true, encoding: .utf8)
@@ -247,6 +250,7 @@ final class LocatorSettings: NSObject, ObservableObject {
       tailGap = stored.tailGap ?? 16
       tailInactivityDelay = stored.tailInactivityDelay ?? 3
       tailRainbow = stored.tailRainbow ?? false
+      tailSpeedShadingEnabled = stored.tailSpeedShadingEnabled ?? false
       tailSmoothing = stored.tailSmoothing ?? "bezier"
       tailThickness = stored.tailThickness
       isReady = true
@@ -281,6 +285,7 @@ private struct StoredSettings: Codable {
   var tailGap: Double?
   var tailInactivityDelay: Double?
   var tailRainbow: Bool?
+  var tailSpeedShadingEnabled: Bool?
   var tailSmoothing: String?
   var tailThickness = 3.0
 
@@ -305,6 +310,7 @@ private struct StoredSettings: Codable {
     tailGap: Double,
     tailInactivityDelay: Double,
     tailRainbow: Bool,
+    tailSpeedShadingEnabled: Bool,
     tailSmoothing: String,
     tailThickness: Double
   ) {
@@ -326,6 +332,7 @@ private struct StoredSettings: Codable {
     self.tailGap = tailGap
     self.tailInactivityDelay = tailInactivityDelay
     self.tailRainbow = tailRainbow
+    self.tailSpeedShadingEnabled = tailSpeedShadingEnabled
     self.tailSmoothing = tailSmoothing
     self.tailThickness = tailThickness
   }
@@ -335,7 +342,7 @@ private struct StoredSettings: Codable {
       || modifierTapDuration == nil || sonarColor == nil || sonarExpansionSpeed == nil
       || sonarRainbow == nil || tailColor == nil || tailActivationMode == nil
       || tailDotsEnabled == nil || tailGap == nil || tailInactivityDelay == nil
-      || tailRainbow == nil || tailSmoothing == nil
+      || tailRainbow == nil || tailSpeedShadingEnabled == nil || tailSmoothing == nil
   }
 
   var resolvedModifierPulseKey: String {
@@ -375,6 +382,7 @@ private struct StoredSettings: Codable {
     tailGap = try toml.double("tailGap")
     tailInactivityDelay = try toml.double("tailInactivityDelay")
     tailRainbow = try toml.bool("tailRainbow")
+    tailSpeedShadingEnabled = try toml.bool("tailSpeedShadingEnabled")
     tailSmoothing = try toml.string("tailSmoothing")
     tailThickness = try toml.double("tailThickness") ?? tailThickness
   }
@@ -397,6 +405,7 @@ private struct StoredSettings: Codable {
           ("tailInactivityDelay", String(tailInactivityDelay ?? 3)),
           ("tailColor", FlatTOML.quoted(tailColor ?? "accent")),
           ("tailRainbow", String(tailRainbow ?? false)),
+          ("tailSpeedShadingEnabled", String(tailSpeedShadingEnabled ?? false)),
           ("tailThickness", String(tailThickness)),
           ("tailGap", String(tailGap ?? 16)),
           ("tailDotsEnabled", String(tailDotsEnabled ?? false)),
@@ -444,11 +453,24 @@ struct SettingsView: View {
         }
         .disabled(!settings.tailEnabled || settings.tailActivationMode != "afterInactivity")
 
-        ColorPicker(L10n.text("Trail color"), selection: tailColor, supportsOpacity: false)
-          .disabled(!settings.tailEnabled || settings.tailRainbow)
+        LabeledContent(L10n.text("Trail color")) {
+          HStack(spacing: 12) {
+            ColorPicker(
+              L10n.text("Trail color"), selection: tailColor, supportsOpacity: false
+            )
+            .labelsHidden()
+            .disabled(settings.tailRainbow)
+            Toggle(L10n.text("Rainbow colors"), isOn: $settings.tailRainbow)
+              .fixedSize()
+          }
+        }
+        .disabled(!settings.tailEnabled)
 
-        Toggle(L10n.text("Rainbow colors"), isOn: $settings.tailRainbow)
-          .disabled(!settings.tailEnabled)
+        Toggle(
+          L10n.text("Speed-sensitive shading"),
+          isOn: $settings.tailSpeedShadingEnabled
+        )
+        .disabled(!settings.tailEnabled)
 
         LabeledContent(L10n.text("Trail thickness")) {
           HStack {

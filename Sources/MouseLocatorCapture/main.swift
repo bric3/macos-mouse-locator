@@ -104,7 +104,7 @@ private func captureShowcases() async throws {
     backing: .buffered,
     defer: false
   )
-  panel.level = NSWindow.Level.floating
+  panel.level = NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue - 1)
   panel.isOpaque = true
   panel.hasShadow = false
   panel.sharingType = NSWindow.SharingType.readOnly
@@ -368,6 +368,7 @@ private struct Settings {
   let tailGap = 16.0
   let tailInactivityDelay = 3.0
   let tailRainbow: Bool
+  let tailSpeedShadingEnabled = true
   let tailSmoothing = "bezier"
   let tailThickness = 8.0
 
@@ -397,6 +398,7 @@ private struct Settings {
           ("tailInactivityDelay", String(tailInactivityDelay)),
           ("tailColor", FlatTOML.quoted(tailColor)),
           ("tailRainbow", String(tailRainbow)),
+          ("tailSpeedShadingEnabled", String(tailSpeedShadingEnabled)),
           ("tailThickness", String(tailThickness)),
           ("tailGap", String(tailGap)),
           ("tailDotsEnabled", String(tailDotsEnabled)),
