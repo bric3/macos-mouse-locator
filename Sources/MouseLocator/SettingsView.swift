@@ -453,15 +453,17 @@ struct SettingsView: View {
         }
         .disabled(!settings.tailEnabled || settings.tailActivationMode != "afterInactivity")
 
-        LabeledContent(L10n.text("Trail color")) {
-          HStack(spacing: 12) {
+        LabeledContent(L10n.text("Color")) {
+          HStack(spacing: 8) {
+            Toggle(L10n.text("Rainbow colors"), isOn: $settings.tailRainbow)
+              .fixedSize()
+            Divider()
+              .frame(height: 18)
             ColorPicker(
               L10n.text("Trail color"), selection: tailColor, supportsOpacity: false
             )
             .labelsHidden()
             .disabled(settings.tailRainbow)
-            Toggle(L10n.text("Rainbow colors"), isOn: $settings.tailRainbow)
-              .fixedSize()
           }
         }
         .disabled(!settings.tailEnabled)
@@ -577,11 +579,20 @@ struct SettingsView: View {
           .font(.caption)
         }
 
-        ColorPicker(L10n.text("Circle color"), selection: sonarColor, supportsOpacity: false)
-          .disabled(!pulseEnabled || settings.sonarRainbow)
-
-        Toggle(L10n.text("Rainbow colors"), isOn: $settings.sonarRainbow)
-          .disabled(!pulseEnabled)
+        LabeledContent(L10n.text("Color")) {
+          HStack(spacing: 8) {
+            Toggle(L10n.text("Rainbow colors"), isOn: $settings.sonarRainbow)
+              .fixedSize()
+            Divider()
+              .frame(height: 18)
+            ColorPicker(
+              L10n.text("Circle color"), selection: sonarColor, supportsOpacity: false
+            )
+            .labelsHidden()
+            .disabled(settings.sonarRainbow)
+          }
+        }
+        .disabled(!pulseEnabled)
 
         LabeledContent(L10n.text("Inactivity delay")) {
           HStack {
