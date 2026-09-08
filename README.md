@@ -61,6 +61,17 @@ it. Running the same command later upgrades the application and keeps launch at
 login registered. If macOS requires approval, System Settings opens to Login
 Items.
 
+> [!NOTE]
+> **Pulse on modifier key** requires Input Monitoring access:
+>
+> 1. Open _System Settings | Privacy & Security | Input Monitoring_.
+> 2. Click `+`, select `~/Applications/MouseLocator.app`, and turn it on.
+> 3. Return to _System Settings | Mouse Locator_ and confirm that access is
+>    shown as granted. If it is not, quit and reopen Mouse Locator.
+>
+> Mouse Tail and the movement-triggered Idle Pulse require no additional
+> privacy permission. Accessibility access is not required.
+
 Local ad-hoc builds reset Mouse Locator's Input Monitoring grant during installation
 because their signing identity changes after each rebuild. Grant access again when
 prompted. To preserve it across upgrades, install with a stable signing identity:
