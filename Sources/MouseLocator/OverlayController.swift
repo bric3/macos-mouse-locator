@@ -540,7 +540,9 @@ private final class OverlayView: NSView {
         startDistance: CGFloat,
         endDistance: CGFloat,
         startOpacity: Double,
-        endOpacity: Double
+        endOpacity: Double,
+        startShade: Double,
+        endShade: Double
       )] = []
       for index in 1..<frameState.points.count {
         let previous = frameState.points[index - 1]
@@ -565,9 +567,10 @@ private final class OverlayView: NSView {
             thickness: Double(frameState.tailLineWidth)
           )
           : startShade
-        let startOpacity = min(
-          EffectTiming.trailOpacity(age: frameState.now - previous.time), startShade)
-        let opacity = min(EffectTiming.trailOpacity(age: frameState.now - point.time), endShade)
+        let startFade = EffectTiming.trailOpacity(age: frameState.now - previous.time)
+        let endFade = EffectTiming.trailOpacity(age: frameState.now - point.time)
+        let startOpacity = darkAppearance ? min(startFade, startShade) : startFade
+        let opacity = darkAppearance ? min(endFade, endShade) : endFade
         let start = previous.position - origin
         let end = point.position - origin
         let path = NSBezierPath()
@@ -599,7 +602,10 @@ private final class OverlayView: NSView {
           )
         }
         segments.append(
-          (path, start, end, startDistance, distance, startOpacity, opacity)
+          (
+            path, start, end, startDistance, distance, startOpacity, opacity, startShade,
+            endShade
+          )
         )
       }
       for segment in segments {
@@ -617,11 +623,13 @@ private final class OverlayView: NSView {
           let startColor = rainbowColor(
             at: totalDistance > 0 ? segment.startDistance / totalDistance : 0,
             opacity: segment.startOpacity,
+            shade: segment.startShade,
             darkAppearance: darkAppearance
           )
           let endColor = rainbowColor(
             at: totalDistance > 0 ? segment.endDistance / totalDistance : 0,
             opacity: segment.endOpacity,
+            shade: segment.endShade,
             darkAppearance: darkAppearance
           )
           stroke(
@@ -636,8 +644,16 @@ private final class OverlayView: NSView {
             from: segment.start,
             to: segment.end,
             colors: [
-              frameState.tailColor.withAlphaComponent(segment.startOpacity * 0.85),
-              frameState.tailColor.withAlphaComponent(segment.endOpacity * 0.85),
+              shadedColor(
+                frameState.tailColor,
+                factor: segment.startShade,
+                darkAppearance: darkAppearance
+              ).withAlphaComponent(segment.startOpacity * 0.85),
+              shadedColor(
+                frameState.tailColor,
+                factor: segment.endShade,
+                darkAppearance: darkAppearance
+              ).withAlphaComponent(segment.endOpacity * 0.85),
             ]
           )
         }
@@ -697,12 +713,23 @@ private final class OverlayView: NSView {
   private func rainbowColor(
     at location: CGFloat,
     opacity: Double,
+    shade: Double,
     darkAppearance: Bool
   ) -> NSColor {
     let color = darkAppearance
       ? Self.darkRainbow.interpolatedColor(atLocation: location)
       : NSColor(calibratedHue: location, saturation: 0.9, brightness: 1, alpha: 1)
-    return color.withAlphaComponent(CGFloat(opacity) * (darkAppearance ? 0.72 : 0.85))
+    return shadedColor(color, factor: shade, darkAppearance: darkAppearance)
+      .withAlphaComponent(CGFloat(opacity) * (darkAppearance ? 0.72 : 0.85))
+  }
+
+  private func shadedColor(
+    _ color: NSColor,
+    factor: Double,
+    darkAppearance: Bool
+  ) -> NSColor {
+    guard !darkAppearance, factor < 1 else { return color }
+    return color.blended(withFraction: CGFloat(1 - factor), of: .black) ?? color
   }
 
   private func stroke(
