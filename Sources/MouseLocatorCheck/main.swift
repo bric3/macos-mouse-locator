@@ -13,12 +13,12 @@ precondition(EffectTiming.trailOpacity(age: EffectTiming.trailLifetime / 2) == 0
 precondition(EffectTiming.trailOpacity(age: EffectTiming.trailLifetime) == 0)
 precondition(
   approximatelyEqual(
-    EffectTiming.trailSpeedFactor(distance: 18, duration: 0.02, thickness: 3),
+    EffectTiming.trailSpeedFactor(distance: 18, duration: 0.02),
     0.75
   )
 )
-precondition(EffectTiming.trailSpeedFactor(distance: 60, duration: 0.02, thickness: 3) == 1)
-precondition(EffectTiming.trailSpeedFactor(distance: 18, duration: 0, thickness: 3) == 1)
+precondition(EffectTiming.trailSpeedFactor(distance: 60, duration: 0.02) == 1)
+precondition(EffectTiming.trailSpeedFactor(distance: 18, duration: 0) == 1)
 precondition(EffectTiming.sonarProgress(elapsed: -0.1) == nil)
 precondition(EffectTiming.sonarProgress(elapsed: 0) == 0)
 precondition(approximatelyEqual(EffectTiming.sonarProgress(elapsed: 1.5), 0.5))

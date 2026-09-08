@@ -386,8 +386,18 @@ private final class OverlayController: NSObject {
       sonarPosition = nil
       sonarStartTime = nil
     }
+    var displayPoints = points
+    let tailIsActive = settings.tailActivationMode != "afterInactivity"
+      || tailActiveUntil.map { now < $0 } == true
+    if settings.tailEnabled, tailIsActive,
+      let last = displayPoints.last,
+      last.position != lastPosition,
+      now - lastMovementTime < EffectTiming.trailLifetime
+    {
+      displayPoints.append(TrailPoint(position: lastPosition, time: lastMovementTime))
+    }
     let frameState = OverlayFrame(
-      points: points,
+      points: displayPoints,
       tailColor: .locatorColor(settings.tailColor),
       tailDotsEnabled: settings.tailDotsEnabled,
       tailGap: settings.tailGap,
@@ -483,11 +493,7 @@ private struct OverlayFrame {
 }
 
 private final class OverlayView: NSView {
-  private static let darkRainbow = NSGradient(colors: [
-    .locatorColor("#FF6B6B"),
-    .locatorColor("#4ECDC4"),
-    .locatorColor("#FFE66D"),
-  ])!
+  private static let colorSpace = NSColorSpace.sRGB.cgColorSpace
 
   var frameState = OverlayFrame(
     points: [],
@@ -554,8 +560,7 @@ private final class OverlayView: NSView {
         let startShade = frameState.tailSpeedShadingEnabled
           ? EffectTiming.trailSpeedFactor(
             distance: Double(segmentDistance),
-            duration: point.time - previous.time,
-            thickness: Double(frameState.tailLineWidth)
+            duration: point.time - previous.time
           )
           : 1
         let followingDistance = point.position.distance(to: following.position)
@@ -563,14 +568,11 @@ private final class OverlayView: NSView {
           && index + 1 < frameState.points.count
           ? EffectTiming.trailSpeedFactor(
             distance: Double(followingDistance),
-            duration: following.time - point.time,
-            thickness: Double(frameState.tailLineWidth)
+            duration: following.time - point.time
           )
           : startShade
         let startFade = EffectTiming.trailOpacity(age: frameState.now - previous.time)
         let endFade = EffectTiming.trailOpacity(age: frameState.now - point.time)
-        let startOpacity = darkAppearance ? min(startFade, startShade) : startFade
-        let opacity = darkAppearance ? min(endFade, endShade) : endFade
         let start = previous.position - origin
         let end = point.position - origin
         let path = NSBezierPath()
@@ -603,7 +605,7 @@ private final class OverlayView: NSView {
         }
         segments.append(
           (
-            path, start, end, startDistance, distance, startOpacity, opacity, startShade,
+            path, start, end, startDistance, distance, startFade, endFade, startShade,
             endShade
           )
         )
@@ -611,8 +613,6 @@ private final class OverlayView: NSView {
       for segment in segments {
         drawRibbonEdge(
           segment.path,
-          from: segment.start,
-          to: segment.end,
           startOpacity: segment.startOpacity,
           endOpacity: segment.endOpacity,
           darkAppearance: darkAppearance
@@ -690,24 +690,22 @@ private final class OverlayView: NSView {
 
   private func drawRibbonEdge(
     _ path: NSBezierPath,
-    from start: NSPoint,
-    to end: NSPoint,
     startOpacity: Double,
     endOpacity: Double,
     darkAppearance: Bool
   ) {
-    let edge = path.copy() as! NSBezierPath
-    edge.lineWidth += max(1.5, path.lineWidth * 0.35)
-    let alpha = darkAppearance ? 0.4 : 0.24
-    stroke(
-      edge,
-      from: start,
-      to: end,
-      colors: [
-        NSColor.black.withAlphaComponent(CGFloat(startOpacity) * alpha),
-        NSColor.black.withAlphaComponent(CGFloat(endOpacity) * alpha),
-      ]
+    guard let context = NSGraphicsContext.current?.cgContext else { return }
+    let opacity = CGFloat((startOpacity + endOpacity) / 2)
+    context.saveGState()
+    context.addPath(path.cgPath)
+    context.setLineWidth(path.lineWidth + max(1.5, path.lineWidth * 0.35))
+    context.setLineCap(frameState.tailDotsEnabled ? .round : .butt)
+    context.setLineJoin(.round)
+    context.setStrokeColor(
+      NSColor.black.withAlphaComponent(opacity * (darkAppearance ? 0.4 : 0.24)).cgColor
     )
+    context.strokePath()
+    context.restoreGState()
   }
 
   private func rainbowColor(
@@ -716,9 +714,12 @@ private final class OverlayView: NSView {
     shade: Double,
     darkAppearance: Bool
   ) -> NSColor {
-    let color = darkAppearance
-      ? Self.darkRainbow.interpolatedColor(atLocation: location)
-      : NSColor(calibratedHue: location, saturation: 0.9, brightness: 1, alpha: 1)
+    let color = NSColor(
+      calibratedHue: location,
+      saturation: darkAppearance ? 0.72 : 0.9,
+      brightness: darkAppearance ? 0.95 : 1,
+      alpha: 1
+    )
     return shadedColor(color, factor: shade, darkAppearance: darkAppearance)
       .withAlphaComponent(CGFloat(opacity) * (darkAppearance ? 0.72 : 0.85))
   }
@@ -728,8 +729,10 @@ private final class OverlayView: NSView {
     factor: Double,
     darkAppearance: Bool
   ) -> NSColor {
-    guard !darkAppearance, factor < 1 else { return color }
-    return color.blended(withFraction: CGFloat(1 - factor), of: .black) ?? color
+    guard factor < 1 else { return color }
+    let maximumShade: CGFloat = darkAppearance ? 0.25 : 0.45
+    return color.blended(withFraction: CGFloat(1 - factor) * maximumShade, of: .black)
+      ?? color
   }
 
   private func stroke(
@@ -742,7 +745,7 @@ private final class OverlayView: NSView {
       start != end,
       let context = NSGraphicsContext.current?.cgContext,
       let gradient = CGGradient(
-        colorsSpace: CGColorSpace(name: CGColorSpace.sRGB),
+        colorsSpace: Self.colorSpace,
         colors: colors.map(\.cgColor) as CFArray,
         locations: [0, 1]
       )

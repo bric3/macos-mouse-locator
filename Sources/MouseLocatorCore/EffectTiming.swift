@@ -28,11 +28,10 @@ public enum EffectTiming {
 
   public static func trailSpeedFactor(
     distance: Double,
-    duration: TimeInterval,
-    thickness: Double
+    duration: TimeInterval
   ) -> Double {
-    guard duration > 0, thickness > 0 else { return 1 }
-    let speed = max(0, min(1, distance / duration / (600 * thickness)))
+    guard duration > 0 else { return 1 }
+    let speed = max(0, min(1, distance / duration / 1_800))
     return 1 - (1 - speed) * (1 - speed)
   }
 }

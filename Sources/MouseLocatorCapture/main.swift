@@ -173,6 +173,7 @@ private func capture(
     ? trailPosition(progress: 0, captureOrigin: captureOrigin)
     : CGPoint(x: captureOrigin.x + CGFloat(width) / 2 - 2, y: captureOrigin.y + CGFloat(height) / 2)
   try warpCursor(to: start)
+  NSCursor.arrow.set()
 
   let settingsURL = configHome.appendingPathComponent("mouse-locator/settings.toml")
   try FileManager.default.createDirectory(
@@ -211,7 +212,8 @@ private func capture(
           CGFloat((frame - 1) * movementsPerFrame + movement)
           / CGFloat(movementFrames * movementsPerFrame)
         try warpCursor(to: trailPosition(progress: progress, captureOrigin: captureOrigin))
-        try await pause(milliseconds: 3)
+        let waypoint = progress * CGFloat(trailWaypoints.count - 1)
+        try await pause(milliseconds: abs(waypoint - 2) < 0.04 ? 36 : 3)
       }
       try await pause(milliseconds: 6)
       frames.append(try await captureFrame(filter: filter, configuration: configuration))
