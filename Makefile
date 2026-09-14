@@ -8,6 +8,7 @@ PREFPANE_INSTALL_DIR ?= $(HOME)/Library/PreferencePanes
 INSTALLED_APP := $(INSTALL_DIR)/MouseLocator.app
 INSTALLED_PREFPANE := $(PREFPANE_INSTALL_DIR)/MouseLocator.prefPane
 SWIFT_TARGET := $(shell uname -m)-apple-macosx14.0
+CORE_OBJECTS = $(wildcard .build/release/MouseLocatorCore.o .build/release/MouseLocatorCore.build/*.swift.o)
 CODESIGN_IDENTITY ?= -
 LOPS ?= lops
 
@@ -47,11 +48,10 @@ prefpane: release
 	mkdir -p $(PREFPANE_BUNDLE)/Contents/MacOS $(PREFPANE_BUNDLE)/Contents/Resources
 	swiftc -emit-library -parse-as-library -swift-version 6 -target $(SWIFT_TARGET) \
 		-module-name MouseLocatorPreferencePane \
-		-I .build/release/Modules \
+		-I .build/release -I .build/release/Modules \
 		Sources/MouseLocator/SettingsView.swift \
 		Sources/MouseLocatorPreferencePane/MouseLocatorPreferencePane.swift \
-		.build/release/MouseLocatorCore.build/EffectTiming.swift.o \
-		.build/release/MouseLocatorCore.build/FlatTOML.swift.o \
+		$(CORE_OBJECTS) \
 		-framework AppKit -framework PreferencePanes -framework SwiftUI \
 		-o $(PREFPANE_BUNDLE)/Contents/MacOS/MouseLocatorPreferences
 	cp Resources/PreferencePane-Info.plist $(PREFPANE_BUNDLE)/Contents/Info.plist

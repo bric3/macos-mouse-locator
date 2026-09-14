@@ -52,6 +52,7 @@ final class LocatorSettings: NSObject, ObservableObject {
   @Published var tailThickness: Double { didSet { scheduleSave() } }
   @Published private(set) var inputMonitoringPermissionGranted: Bool?
   @Published private(set) var storageError: String?
+  @Published var showingInputMonitoringHelp = false
 
   let configurationURL: URL
 
@@ -425,7 +426,6 @@ private struct StoredSettings: Codable {
 
 struct SettingsView: View {
   @ObservedObject var settings: LocatorSettings
-  @State private var showingInputMonitoringHelp = false
 
   var body: some View {
     Form {
@@ -513,13 +513,13 @@ struct SettingsView: View {
           HStack(spacing: 6) {
             Text(L10n.text("Pulse on modifier key"))
             Button {
-              showingInputMonitoringHelp.toggle()
+              settings.showingInputMonitoringHelp.toggle()
             } label: {
               Image(systemName: "info.circle")
             }
             .buttonStyle(.plain)
             .help(L10n.text("About modifier-key permission"))
-            .popover(isPresented: $showingInputMonitoringHelp) {
+            .popover(isPresented: $settings.showingInputMonitoringHelp) {
               VStack(alignment: .leading, spacing: 8) {
                 Text(L10n.text("Modifier-key permission"))
                   .font(.headline)
