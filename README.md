@@ -19,6 +19,8 @@ This native app makes the pointer easier to spot with two configurable cues:
 
 ## Showcase
 
+https://github.com/user-attachments/assets/d832a45e-f761-43a3-8da5-19f01e1d8b2a
+
 From left to right:
 
 1. Mouse Tail.
