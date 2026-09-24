@@ -21,6 +21,12 @@ This native app makes the pointer easier to spot with two configurable cues:
 
 https://github.com/user-attachments/assets/d832a45e-f761-43a3-8da5-19f01e1d8b2a
 
+> What you see above is when MouseLocator is **configured**
+> * to have both the _mouse trail_ and the _idle pulse_ circle
+> * to show only after 5s of inactivity, and stops showing if mouse remain active
+> * with a `5pt` thickness
+> * with showing the pulse indicator on <kbd>ctrl</kbd> key
+
 From left to right:
 
 1. Mouse Tail.
