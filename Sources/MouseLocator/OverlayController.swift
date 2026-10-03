@@ -125,6 +125,8 @@ private final class OverlayController: NSObject {
   private var eventMonitors: [Any] = []
   private var modifierEventMonitors: [Any] = []
   private var modifierPulseObserver: AnyCancellable?
+  private var pauseSettingsObserver: AnyCancellable?
+  private var effectsPaused = false
   private var modifierTapDetector = ModifierTapDetector()
   private var panels: [NSPanel] = []
   private var points: [TrailPoint] = []
@@ -142,6 +144,21 @@ private final class OverlayController: NSObject {
       NSApp.appearance = NSAppearance(named: .aqua)
     }
     rebuildPanels()
+    NSWorkspace.shared.notificationCenter.addObserver(
+      self,
+      selector: #selector(frontmostApplicationChanged(_:)),
+      name: NSWorkspace.didActivateApplicationNotification,
+      object: nil
+    )
+    updatePauseState(for: NSWorkspace.shared.frontmostApplication)
+    pauseSettingsObserver = LocatorSettings.shared.$pauseWhenGameFocused
+      .removeDuplicates()
+      .combineLatest(LocatorSettings.shared.$excludedApplicationBundleIdentifiers.removeDuplicates())
+      .sink { [weak self] _ in
+        Task { @MainActor in
+          self?.updatePauseState(for: NSWorkspace.shared.frontmostApplication)
+        }
+      }
     NotificationCenter.default.addObserver(
       self,
       selector: #selector(rebuildPanels),
@@ -198,10 +215,45 @@ private final class OverlayController: NSObject {
     modifierEventMonitors.removeAll()
     modifierPulseObserver?.cancel()
     modifierPulseObserver = nil
+    pauseSettingsObserver?.cancel()
+    pauseSettingsObserver = nil
+    NSWorkspace.shared.notificationCenter.removeObserver(self)
     NotificationCenter.default.removeObserver(self)
     DistributedNotificationCenter.default().removeObserver(self)
     panels.forEach { $0.close() }
     panels.removeAll()
+  }
+
+  @objc private func frontmostApplicationChanged(_ notification: Notification) {
+    updatePauseState(
+      for: notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+    )
+  }
+
+  private func updatePauseState(for application: NSRunningApplication?) {
+    let settings = LocatorSettings.shared
+    let category = settings.pauseWhenGameFocused
+      ? application?.bundleURL.flatMap { Bundle(url: $0) }?
+        .object(forInfoDictionaryKey: "LSApplicationCategoryType") as? String
+      : nil
+    let paused = FocusedAppPolicy.shouldPause(
+      bundleIdentifier: application?.bundleIdentifier,
+      category: category,
+      pauseWhenGameFocused: settings.pauseWhenGameFocused,
+      excludedApplicationBundleIdentifiers: settings.excludedApplicationBundleIdentifiers
+    )
+    guard paused != effectsPaused else { return }
+    effectsPaused = paused
+    timer?.invalidate()
+    timer = nil
+    points.removeAll()
+    tailActiveUntil = nil
+    sonarPosition = nil
+    sonarStartTime = nil
+    modifierTapDetector.reset()
+    lastPosition = NSEvent.mouseLocation
+    lastMovementTime = ProcessInfo.processInfo.systemUptime
+    panels.forEach { $0.orderOut(nil) }
   }
 
   private func setModifierPulseMonitoring(_ enabled: Bool, prompt: Bool = true) {
@@ -261,6 +313,7 @@ private final class OverlayController: NSObject {
   }
 
   private func handleModifierEvent(isKeyDown: Bool, flags: UInt, timestamp: TimeInterval) {
+    guard !effectsPaused else { return }
     if isKeyDown {
       modifierTapDetector.cancel()
       return
@@ -309,6 +362,7 @@ private final class OverlayController: NSObject {
   }
 
   private func pointerMoved() {
+    guard !effectsPaused else { return }
     let settings = LocatorSettings.shared
     let now = ProcessInfo.processInfo.systemUptime
     let position = NSEvent.mouseLocation
@@ -349,6 +403,7 @@ private final class OverlayController: NSObject {
     at position: NSPoint,
     now: TimeInterval = ProcessInfo.processInfo.systemUptime
   ) {
+    guard !effectsPaused else { return }
     sonarPosition = position
     sonarStartTime = now
     startAnimationTimer()

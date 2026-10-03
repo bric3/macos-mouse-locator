@@ -4,6 +4,7 @@
 import AppKit
 import MouseLocatorCore
 import SwiftUI
+import UniformTypeIdentifiers
 
 private final class LocalizationToken: NSObject {}
 
@@ -30,6 +31,8 @@ final class LocatorSettings: NSObject, ObservableObject {
     "dev.brice.MouseLocator.inputMonitoringStatusChanged")
 
   @Published var menuBarIconEnabled: Bool { didSet { saveNow() } }
+  @Published var pauseWhenGameFocused: Bool { didSet { saveNow() } }
+  @Published var excludedApplicationBundleIdentifiers: [String] { didSet { saveNow() } }
   @Published var modifierPulseEnabled: Bool { didSet { saveNow() } }
   @Published var modifierPulseKey: String { didSet { saveNow() } }
   @Published var modifierTapDuration: Double { didSet { saveNow() } }
@@ -107,6 +110,8 @@ final class LocatorSettings: NSObject, ObservableObject {
     }
 
     menuBarIconEnabled = stored.menuBarIconEnabled ?? true
+    pauseWhenGameFocused = stored.pauseWhenGameFocused ?? false
+    excludedApplicationBundleIdentifiers = stored.excludedApplicationBundleIdentifiers ?? []
     modifierPulseEnabled = stored.modifierPulseEnabled ?? false
     modifierPulseKey = stored.resolvedModifierPulseKey
     modifierTapDuration = stored.modifierTapDuration ?? 0.35
@@ -190,6 +195,8 @@ final class LocatorSettings: NSObject, ObservableObject {
       )
       try StoredSettings(
         menuBarIconEnabled: menuBarIconEnabled,
+        pauseWhenGameFocused: pauseWhenGameFocused,
+        excludedApplicationBundleIdentifiers: excludedApplicationBundleIdentifiers,
         modifierPulseEnabled: modifierPulseEnabled,
         modifierPulseKey: modifierPulseKey,
         modifierTapDuration: modifierTapDuration,
@@ -233,6 +240,8 @@ final class LocatorSettings: NSObject, ObservableObject {
       )
       isReady = false
       menuBarIconEnabled = stored.menuBarIconEnabled ?? true
+      pauseWhenGameFocused = stored.pauseWhenGameFocused ?? false
+      excludedApplicationBundleIdentifiers = stored.excludedApplicationBundleIdentifiers ?? []
       modifierPulseEnabled = stored.modifierPulseEnabled ?? false
       modifierPulseKey = stored.resolvedModifierPulseKey
       modifierTapDuration = stored.modifierTapDuration ?? 0.35
@@ -269,6 +278,8 @@ final class LocatorSettings: NSObject, ObservableObject {
 
 private struct StoredSettings: Codable {
   var menuBarIconEnabled: Bool?
+  var pauseWhenGameFocused: Bool?
+  var excludedApplicationBundleIdentifiers: [String]?
   var modifierPulseEnabled: Bool?
   var modifierPulseKey: String?
   var modifierTapDuration: Double?
@@ -294,6 +305,8 @@ private struct StoredSettings: Codable {
 
   init(
     menuBarIconEnabled: Bool,
+    pauseWhenGameFocused: Bool,
+    excludedApplicationBundleIdentifiers: [String],
     modifierPulseEnabled: Bool,
     modifierPulseKey: String,
     modifierTapDuration: Double,
@@ -316,6 +329,8 @@ private struct StoredSettings: Codable {
     tailThickness: Double
   ) {
     self.menuBarIconEnabled = menuBarIconEnabled
+    self.pauseWhenGameFocused = pauseWhenGameFocused
+    self.excludedApplicationBundleIdentifiers = excludedApplicationBundleIdentifiers
     self.modifierPulseEnabled = modifierPulseEnabled
     self.modifierPulseKey = modifierPulseKey
     self.modifierTapDuration = modifierTapDuration
@@ -340,6 +355,7 @@ private struct StoredSettings: Codable {
 
   var needsUpgrade: Bool {
     menuBarIconEnabled == nil || modifierPulseEnabled == nil || modifierPulseKey == nil
+      || pauseWhenGameFocused == nil || excludedApplicationBundleIdentifiers == nil
       || modifierTapDuration == nil || sonarColor == nil || sonarExpansionSpeed == nil
       || sonarRainbow == nil || tailColor == nil || tailActivationMode == nil
       || tailDotsEnabled == nil || tailGap == nil || tailInactivityDelay == nil
@@ -366,6 +382,8 @@ private struct StoredSettings: Codable {
   init(toml source: String) throws {
     let toml = try FlatTOML(source)
     menuBarIconEnabled = try toml.bool("menuBarIconEnabled")
+    pauseWhenGameFocused = try toml.bool("pauseWhenGameFocused")
+    excludedApplicationBundleIdentifiers = try toml.strings("excludedApplicationBundleIdentifiers")
     modifierPulseEnabled = try toml.bool("modifierPulseEnabled")
     modifierPulseKey = try toml.string("modifierPulseKey")
     modifierTapDuration = try toml.double("modifierTapDuration")
@@ -398,6 +416,11 @@ private struct StoredSettings: Codable {
         ],
         fields: [
           ("menuBarIconEnabled", String(menuBarIconEnabled ?? true)),
+          ("pauseWhenGameFocused", String(pauseWhenGameFocused ?? false)),
+          (
+            "excludedApplicationBundleIdentifiers",
+            FlatTOML.array(excludedApplicationBundleIdentifiers ?? [])
+          ),
           ("modifierPulseEnabled", String(modifierPulseEnabled ?? false)),
           ("modifierPulseKey", FlatTOML.quoted(modifierPulseKey ?? "control")),
           ("modifierTapDuration", String(modifierTapDuration ?? 0.35)),
@@ -431,6 +454,32 @@ struct SettingsView: View {
     Form {
       Section(L10n.text("Menu Bar")) {
         Toggle(L10n.text("Show Mouse Locator in the menu bar"), isOn: $settings.menuBarIconEnabled)
+      }
+
+      Section(L10n.text("Pause Effects")) {
+        Toggle(L10n.text("Pause when a game is focused"), isOn: $settings.pauseWhenGameFocused)
+        Text(L10n.text("Uses the app's game category. Add games below if they are not detected."))
+          .font(.caption)
+          .foregroundStyle(.secondary)
+
+        LabeledContent(L10n.text("Excluded apps")) {
+          Button(L10n.text("Add App..."), action: addExcludedApplications)
+        }
+        if !settings.excludedApplicationBundleIdentifiers.isEmpty {
+          ScrollView {
+            LazyVStack(spacing: 8) {
+              ForEach(settings.excludedApplicationBundleIdentifiers, id: \.self) { identifier in
+                excludedApplicationRow(identifier)
+              }
+            }
+          }
+          .frame(height: min(CGFloat(settings.excludedApplicationBundleIdentifiers.count) * 40, 160))
+        }
+        Text(
+          L10n.text("All effects pause while an excluded app is focused and resume when you switch away.")
+        )
+          .font(.caption)
+          .foregroundStyle(.secondary)
       }
 
       Section(L10n.text("Mouse Tail")) {
@@ -675,6 +724,62 @@ struct SettingsView: View {
       get: { Color(nsColor: .locatorColor(settings.tailColor)) },
       set: { settings.tailColor = NSColor($0).locatorHexRGB }
     )
+  }
+
+  private func excludedApplicationRow(_ identifier: String) -> some View {
+    let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier)
+    let name = url.map { FileManager.default.displayName(atPath: $0.path) } ?? identifier
+    return HStack {
+      if let url {
+        Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
+          .resizable()
+          .frame(width: 24, height: 24)
+      } else {
+        Image(systemName: "app")
+          .frame(width: 24, height: 24)
+      }
+      Text(name)
+        .lineLimit(1)
+        .truncationMode(.middle)
+        .help(identifier)
+      Spacer()
+      Button {
+        settings.excludedApplicationBundleIdentifiers.removeAll { $0 == identifier }
+      } label: {
+        Label(L10n.text("Remove"), systemImage: "minus")
+      }
+      .labelStyle(.iconOnly)
+      .accessibilityLabel(L10n.format("Remove %@", name))
+    }
+  }
+
+  private func addExcludedApplications() {
+    let panel = NSOpenPanel()
+    panel.title = L10n.text("Choose Apps to Pause Effects")
+    panel.prompt = L10n.text("Add")
+    panel.allowedContentTypes = [.applicationBundle]
+    panel.canChooseDirectories = false
+    panel.allowsMultipleSelection = true
+    panel.treatsFilePackagesAsDirectories = false
+    guard panel.runModal() == .OK else { return }
+
+    var identifiers = settings.excludedApplicationBundleIdentifiers
+    for url in panel.urls {
+      guard let identifier = ApplicationBundleResolver.bundleIdentifier(for: url) else {
+        let alert = NSAlert()
+        alert.messageText = L10n.text("Could Not Add App")
+        alert.informativeText = L10n.format(
+          "Could not identify %@. Select the actual app bundle. Steam shortcuts require an installed game with a single app bundle in its install folder.",
+          FileManager.default.displayName(atPath: url.path)
+        )
+        alert.runModal()
+        continue
+      }
+      if !identifiers.contains(identifier) { identifiers.append(identifier) }
+    }
+    if identifiers != settings.excludedApplicationBundleIdentifiers {
+      settings.excludedApplicationBundleIdentifiers = identifiers
+    }
   }
 
   private var sonarColor: Binding<Color> {

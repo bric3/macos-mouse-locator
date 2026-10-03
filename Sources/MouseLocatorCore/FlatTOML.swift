@@ -52,6 +52,19 @@ public struct FlatTOML {
     String(decoding: try JSONEncoder().encode(value), as: UTF8.self)
   }
 
+  public func strings(_ key: String) throws -> [String]? {
+    guard let value = values[key] else { return nil }
+    do {
+      return try JSONDecoder().decode([String].self, from: Data(value.utf8))
+    } catch {
+      throw ParseError.invalidValue(key)
+    }
+  }
+
+  public static func array(_ values: [String]) throws -> String {
+    "[" + (try values.map(quoted)).joined(separator: ", ") + "]"
+  }
+
   public static func document(header: [String], fields: [(String, String)]) -> String {
     header.map { "# \($0)" }.joined(separator: "\n")
       + "\n\n"

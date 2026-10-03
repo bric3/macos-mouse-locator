@@ -55,6 +55,22 @@ pointer for three seconds and can use a chosen color or rainbow colors. The
 tail also supports a chosen color or a smooth rainbow gradient. Its configurable
 cursor gap defaults to 16 pt.
 
+In Settings, "Pause Effects" can pause the trail, idle pulse, and modifier-key
+pulse while a game or an excluded app is focused. Effects resume automatically
+when you switch to another app, keeping your effect settings.
+
+- Enable "Pause when a game is focused" to recognize apps that declare a game
+  category. This uses app metadata rather than the system Game Mode state.
+- Use "Add App..." to select one or more `.app` bundles for explicit exclusions,
+  including games without category metadata. Steam-generated launcher shortcuts
+  are resolved to the installed game in your Steam libraries. If the game has
+  multiple app bundles or uses a nested install layout, select its actual `.app`
+  directly. Exclusions follow the app's bundle identifier even if it moves or is
+  updated. Remove an app to stop excluding it.
+
+Automatic game detection is off by default, and the exclusion list starts empty.
+These settings require no additional privacy permission.
+
 ## Install
 
 ```sh

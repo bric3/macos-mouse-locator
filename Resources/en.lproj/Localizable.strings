@@ -12,6 +12,18 @@
 
 "Menu Bar" = "Menu Bar";
 "Show Mouse Locator in the menu bar" = "Show Mouse Locator in the menu bar";
+"Pause Effects" = "Pause Effects";
+"Pause when a game is focused" = "Pause when a game is focused";
+"Uses the app's game category. Add games below if they are not detected." = "Uses the app's game category. Add games below if they are not detected.";
+"Excluded apps" = "Excluded apps";
+"Add App..." = "Add App...";
+"Remove" = "Remove";
+"Remove %@" = "Remove %@";
+"All effects pause while an excluded app is focused and resume when you switch away." = "All effects pause while an excluded app is focused and resume when you switch away.";
+"Choose Apps to Pause Effects" = "Choose Apps to Pause Effects";
+"Add" = "Add";
+"Could Not Add App" = "Could Not Add App";
+"Could not identify %@. Select the actual app bundle. Steam shortcuts require an installed game with a single app bundle in its install folder." = "Could not identify %@. Select the actual app bundle. Steam shortcuts require an installed game with a single app bundle in its install folder.";
 "Storage" = "Storage";
 "Copy" = "Copy";
 
